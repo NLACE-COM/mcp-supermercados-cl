@@ -3,7 +3,7 @@
 > Servidor **MCP** para buscar productos, comparar precios y armar la mejor lista
 > de compra en supermercados chilenos con Claude, ChatGPT u otro cliente MCP.
 
-![status](https://img.shields.io/badge/estado-activo-brightgreen)
+[![npm](https://img.shields.io/npm/v/mcp-supermercados-cl?logo=npm)](https://www.npmjs.com/package/mcp-supermercados-cl)
 ![node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
 ![tests](https://img.shields.io/badge/tests-104%20passing-brightgreen)
 ![license](https://img.shields.io/badge/licencia-MIT-blue)
@@ -54,7 +54,25 @@ servers.
 
 ## 📦 Instalación
 
-Requiere **Node.js ≥ 20**.
+Requiere **Node.js ≥ 20**. Publicado en npm:
+[`mcp-supermercados-cl`](https://www.npmjs.com/package/mcp-supermercados-cl).
+
+**Opción 1 — vía `npx` (recomendada).** No instalas nada; tu cliente MCP lo
+ejecuta al vuelo. En **Claude Desktop** / **Claude Code**
+(`claude_desktop_config.json` o `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "supermercados": {
+      "command": "npx",
+      "args": ["-y", "mcp-supermercados-cl"]
+    }
+  }
+}
+```
+
+**Opción 2 — desde el código (para desarrollar o contribuir):**
 
 ```bash
 git clone https://github.com/NLACE-COM/mcp-supermercados-cl.git
@@ -63,8 +81,7 @@ npm install
 npm run build
 ```
 
-Conéctalo a tu cliente MCP. Ejemplo para **Claude Desktop** / **Claude Code**
-(`claude_desktop_config.json` o `.mcp.json`):
+Y apunta tu cliente al build local:
 
 ```json
 {
