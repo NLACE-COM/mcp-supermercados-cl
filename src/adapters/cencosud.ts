@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { TtlCache } from "../core/cache.js";
-import { computeUnitPrice, normalizeText, toClp } from "../core/normalize.js";
+import {
+  computeUnitPrice,
+  normalizeText,
+  normalizeUnit,
+  normalizeUnitPrice,
+  toClp,
+} from "../core/normalize.js";
 import type {
   Cart,
   CartItem,
@@ -256,7 +262,9 @@ export class CencosudAdapter implements StoreAdapter {
     if (listPrice !== undefined && listPrice <= price) listPrice = undefined;
 
     const sku = parseSkuData(data);
-    const unit = sku?.measurement_unit_un;
+    const unit = sku?.measurement_unit_un
+      ? normalizeUnit(sku.measurement_unit_un)
+      : undefined;
     const unitPrice = computeUnitPrice(price, sku?.unit_multiplier_un);
 
     const promoName = sku?.promotionData?.promotionName || undefined;
@@ -392,11 +400,25 @@ export class CencosudAdapter implements StoreAdapter {
           }
         : undefined;
 
-    const unit: string | undefined =
-      item.ppumMeasurementUnit || item.measurementUnitUn || undefined;
-    const unitPrice =
-      toClp(item.ppumPrice) ??
-      computeUnitPrice(price, item.unitMultiplierUn as number | undefined);
+    // Precio por unidad normalizado a base canónica (por kg/lt), por si la
+    // ficha lo entrega en g/ml.
+    const rawPpum = toClp(item.ppumPrice);
+    const rawPpumUnit = item.ppumMeasurementUnit as string | undefined;
+    let unit: string | undefined;
+    let unitPrice: number | undefined;
+    if (rawPpum !== undefined && rawPpumUnit) {
+      const norm = normalizeUnitPrice(rawPpum, 1, rawPpumUnit);
+      unitPrice = norm.unitPrice;
+      unit = norm.unit;
+    } else {
+      unit = item.measurementUnitUn
+        ? normalizeUnit(item.measurementUnitUn)
+        : undefined;
+      unitPrice = computeUnitPrice(
+        price,
+        item.unitMultiplierUn as number | undefined
+      );
+    }
 
     // Bundles: promociones con mQuantity > 1 ("Lleva N por $X"). El precio
     // total del pack es unitPrice * mQuantity. Excluimos las de socio (esas

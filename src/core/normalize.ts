@@ -44,18 +44,55 @@ export function parseClpString(value: unknown): number | undefined {
 }
 
 /**
- * Extrae precio por unidad y unidad de un texto tipo "$2.500 x litro",
- * "$1.190 x kg", "$738 x L".
+ * Extrae precio por unidad de un texto y lo normaliza a una base canónica
+ * (por kg, por lt, por un) para que sea COMPARABLE entre formatos y cadenas.
+ * Reconoce cantidad en la etiqueta:
+ *   "$2.500 x litro"  -> { unitPrice: 2500,  unit: "lt" }
+ *   "$1.048 x 100ml"  -> { unitPrice: 10480, unit: "lt" }   (por litro)
+ *   "$700 x 100 g"    -> { unitPrice: 7000,  unit: "kg" }   (por kilo)
+ *   "$1.097 por LT"   -> { unitPrice: 1097,  unit: "lt" }
  */
 export function parseUnitPriceString(
   value: unknown
 ): { unitPrice: number; unit: string } | undefined {
   if (typeof value !== "string") return undefined;
-  const m = value.match(/\$?\s*([\d.]+)\s*x\s*([a-zA-Z]+)/);
+  const m = value.match(
+    /\$?\s*([\d.]+)\s*(?:x|por)\s*(\d+(?:[.,]\d+)?)?\s*([a-zA-Z]+)/i
+  );
   if (!m) return undefined;
-  const unitPrice = Number(m[1].replace(/\./g, ""));
-  if (!Number.isFinite(unitPrice)) return undefined;
-  return { unitPrice, unit: normalizeUnit(m[2]) };
+  const price = Number(m[1].replace(/\./g, ""));
+  if (!Number.isFinite(price)) return undefined;
+  const qty = m[2] ? Number(m[2].replace(",", ".")) : 1;
+  return normalizeUnitPrice(price, qty, m[3]);
+}
+
+/**
+ * Lleva (precio, cantidad, unidad) a precio por unidad base canónica.
+ * Masa -> por kg, volumen -> por lt, resto -> por un. Así "$X por 100 g" y
+ * "$Y por kg" quedan en la misma escala y el modelo compara formatos bien.
+ */
+export function normalizeUnitPrice(
+  price: number,
+  qty: number,
+  rawUnit: string
+): { unitPrice: number; unit: string } {
+  const q = qty > 0 ? qty : 1;
+  const u = normalizeText(rawUnit);
+
+  if (["g", "gr", "grs", "gramo", "gramos"].includes(u)) {
+    return { unitPrice: Math.round(price / (q / 1000)), unit: "kg" };
+  }
+  if (["kg", "kilo", "kilos", "k"].includes(u)) {
+    return { unitPrice: Math.round(price / q), unit: "kg" };
+  }
+  if (["ml", "cc"].includes(u)) {
+    return { unitPrice: Math.round(price / (q / 1000)), unit: "lt" };
+  }
+  if (["lt", "l", "litro", "litros"].includes(u)) {
+    return { unitPrice: Math.round(price / q), unit: "lt" };
+  }
+  const unit = ["un", "unidad", "unidades"].includes(u) ? "un" : u;
+  return { unitPrice: Math.round(price / q), unit };
 }
 
 /**
@@ -116,8 +153,9 @@ export function parseBundle(
 /** Normaliza etiquetas de unidad a formas cortas: kg, lt, un. */
 export function normalizeUnit(unit: string): string {
   const u = normalizeText(unit);
-  if (u === "litro" || u === "l" || u === "lt") return "lt";
-  if (u === "kilo" || u === "kg" || u === "k") return "kg";
-  if (u === "un" || u === "unidad") return "un";
+  if (["litro", "litros", "l", "lt", "ml", "cc"].includes(u)) return "lt";
+  if (["kilo", "kilos", "kg", "k", "g", "gr", "gramo", "gramos"].includes(u))
+    return "kg";
+  if (["un", "unidad", "unidades"].includes(u)) return "un";
   return u;
 }
