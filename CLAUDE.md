@@ -6,8 +6,8 @@ beneficios por RUT del usuario (Jumbo primero), no comparación entre cadenas.
 
 ## Documentos fuente
 
-- `PLAN-mcp-supermercados-chile.md` — plan vigente (arquitectura, roadmap por fases, tools). **Fuente de verdad.**
-- `PLAN-supermercado-mcp.md` — plan anterior orientado a comparación; útil solo como referencia de endpoints.
+- `docs/PLAN-arquitectura.md` — plan vigente (arquitectura, roadmap por fases, tools). **Fuente de verdad.**
+- `docs/PLAN-referencia-endpoints.md` — plan anterior orientado a comparación; útil solo como referencia de endpoints.
 - `docs/captura-cencosud-2026-07-06.md` — captura verificada del request de Constructor.io, scoping por sucursal (`variations_map`), y dónde vive el precio Prime (estado deshidratado del SSR de la PDP).
 
 ## Estado (actualizar al avanzar)

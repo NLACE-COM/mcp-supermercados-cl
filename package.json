@@ -1,7 +1,7 @@
 {
   "name": "mcp-supermercados-cl",
   "version": "1.0.0",
-  "description": "Servidor MCP para armar la mejor lista de compra en supermercados chilenos. Fase 1: Jumbo lectura pública.",
+  "description": "Servidor MCP para buscar productos, comparar precios y armar la mejor lista de compra en supermercados chilenos (Jumbo, Santa Isabel, Unimarc, Tottus, Lider) desde Claude o ChatGPT.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -14,12 +14,36 @@
   "engines": {
     "node": ">=20"
   },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "supermercado",
+    "chile",
+    "jumbo",
+    "unimarc",
+    "lider",
+    "tottus",
+    "santa-isabel",
+    "precios",
+    "shopping-list"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NLACE-COM/mcp-supermercados-cl.git"
+  },
+  "homepage": "https://github.com/NLACE-COM/mcp-supermercados-cl#readme",
+  "bugs": {
+    "url": "https://github.com/NLACE-COM/mcp-supermercados-cl/issues"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
     "test": "vitest run tests/adapters",
     "test:live": "LIVE=1 vitest run tests/live",
-    "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts"
+    "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
