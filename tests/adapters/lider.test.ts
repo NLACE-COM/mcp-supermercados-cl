@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { LiderAdapter, extractLiderProducts } from "../../src/adapters/lider.js";
+import {
+  LiderAdapter,
+  extractLiderProducts,
+  isLiderBlockedHtml,
+} from "../../src/adapters/lider.js";
+import { toActionableError } from "../../src/core/errors.js";
 import { ProductSchema } from "../../src/core/types.js";
 import type { HttpFetcher } from "../../src/http/client.js";
 
@@ -87,6 +92,41 @@ describe("LiderAdapter · mapProduct", () => {
     });
     expect(bridged).toBe(true);
     expect(products.length).toBe(3);
+  });
+});
+
+describe("LiderAdapter · bloqueo antibot", () => {
+  it("detecta la página de PerimeterX (sin __NEXT_DATA__ o 'Robot or human')", () => {
+    expect(isLiderBlockedHtml("<html><title>Robot or human?</title></html>")).toBe(
+      true
+    );
+    expect(isLiderBlockedHtml("blocked - redirecting")).toBe(true);
+    expect(
+      isLiderBlockedHtml('<script id="__NEXT_DATA__" type="application/json">{}')
+    ).toBe(false);
+  });
+
+  it("searchProducts lanza error de bloqueo en vez de devolver 0 resultados", async () => {
+    const http: HttpFetcher = {
+      async getText() {
+        return "<html><title>Robot or human?</title></html>";
+      },
+      async getJson<T>(): Promise<T> {
+        throw new Error("no");
+      },
+      async postJson<T>(): Promise<T> {
+        throw new Error("no");
+      },
+    };
+    const err = await new LiderAdapter(http)
+      .searchProducts("pisco")
+      .then(() => null)
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    // El error se clasifica como "blocked" y su acción distingue bloqueo de vacío.
+    const actionable = toActionableError(err, "lider");
+    expect(actionable.kind).toBe("blocked");
+    expect(actionable.action).toContain("intermitente");
   });
 });
 

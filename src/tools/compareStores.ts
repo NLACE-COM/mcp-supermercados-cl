@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { compareStores } from "../core/compare.js";
 import { availableStores } from "../core/registry.js";
+import { priceScopeInfo } from "../core/format.js";
 import { progressNotifier } from "./progress.js";
 
 /**
@@ -55,6 +56,14 @@ export function registerCompareStores(server: McpServer): void {
             text: JSON.stringify(
               {
                 items: result.items,
+                ...(branchId
+                  ? {
+                      priceScope: "sucursal" as const,
+                      priceScopeNote:
+                        "branchId aplica solo a las cadenas Cencosud (Jumbo/Santa Isabel); " +
+                        "las demás cadenas usan su tienda por defecto.",
+                    }
+                  : priceScopeInfo(branchId)),
                 cheapest: result.cheapest ?? null,
                 disclaimer: result.disclaimer,
                 comparability: result.comparability,

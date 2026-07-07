@@ -20,3 +20,24 @@ export function savingPct(saving: number, base: number): number {
   if (base <= 0 || saving <= 0) return 0;
   return Math.round((saving / base) * 100);
 }
+
+export interface PriceScopeInfo {
+  priceScope: "sucursal" | "nacional";
+  priceScopeNote?: string;
+}
+
+/**
+ * Alcance de los precios según si la consulta llevó sucursal. Viaja dentro de
+ * la respuesta (no solo en el schema) para que el modelo repita el caveat al
+ * usuario en vez de afirmar precios exactos que su sucursal puede no tener.
+ */
+export function priceScopeInfo(branchId?: string): PriceScopeInfo {
+  if (branchId) return { priceScope: "sucursal" };
+  return {
+    priceScope: "nacional",
+    priceScopeNote:
+      "Precios de catálogo nacional (sin sucursal): el precio en la sucursal del usuario puede ser " +
+      "distinto. Advertirlo al recomendar. Para precios exactos, obtener la sucursal con discover_branch " +
+      "(o el prompt conectar_sesion) y repetir la consulta con branchId.",
+  };
+}

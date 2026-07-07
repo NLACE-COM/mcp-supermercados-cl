@@ -34,6 +34,16 @@ import { NotImplementedError, type StoreAdapter } from "./base.js";
  */
 
 const BASE = "https://super.lider.cl";
+const NEXT_DATA_MARKER = '<script id="__NEXT_DATA__" type="application/json">';
+
+/**
+ * PerimeterX no siempre responde 403: a veces redirige (307) a /blocked, una
+ * página "Robot or human?" sin `__NEXT_DATA__`. Sin esta detección eso se
+ * confundía con "0 resultados", que suena a "no venden el producto".
+ */
+export function isLiderBlockedHtml(html: string): boolean {
+  return html.includes("Robot or human") || !html.includes(NEXT_DATA_MARKER);
+}
 
 interface LiderPriceInfo {
   itemPrice?: string;
@@ -70,6 +80,11 @@ export class LiderAdapter implements StoreAdapter {
     const limit = Math.min(Math.max(opts.limit ?? 10, 1), 46);
     const page = Math.max(opts.page ?? 1, 1);
     const html = await this.fetchSearchHtml(query, page, opts.session);
+    if (isLiderBlockedHtml(html)) {
+      throw new Error(
+        'Líder bloqueó la petición: devolvió su página antibot "Robot or human" (PerimeterX) en vez de resultados.'
+      );
+    }
     const products = extractLiderProducts(html);
     return products
       .slice(0, limit)
@@ -163,10 +178,9 @@ function imageUrl(p: LiderProduct): string | undefined {
  * El árbol de Glass es profundo; se recorre buscando el arreglo de productos.
  */
 export function extractLiderProducts(html: string): LiderProduct[] {
-  const marker = '<script id="__NEXT_DATA__" type="application/json">';
-  const start = html.indexOf(marker);
+  const start = html.indexOf(NEXT_DATA_MARKER);
   if (start === -1) return [];
-  const from = start + marker.length;
+  const from = start + NEXT_DATA_MARKER.length;
   const end = html.indexOf("</script>", from);
   if (end === -1) return [];
   let data: unknown;

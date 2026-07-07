@@ -87,12 +87,15 @@ export function toActionableError(err: unknown, store?: StoreId): ActionableErro
         residentialHint,
     };
   }
-  if (/bloque|blocked|perimeterx|captcha|forbidden/i.test(raw)) {
+  if (/bloque|blocked|perimeterx|captcha|robot or human|forbidden/i.test(raw)) {
     return {
       kind: "blocked",
-      message: "La cadena bloqueó la petición (antibot).",
+      message: raw || "La cadena bloqueó la petición (antibot).",
       action:
-        "Corre el servidor desde tu equipo (IP residencial), no desde la nube." +
+        "Corre el servidor desde tu equipo (IP residencial), no desde la nube. " +
+        "Si ya estás en IP residencial, el bloqueo suele ser intermitente: reintenta en unos " +
+        "minutos, o abre el sitio en tu navegador (resolver el desafío desbloquea la IP) y " +
+        'reintenta. Informar al usuario que la cadena bloqueó, no que "no hay resultados".' +
         residentialHint,
     };
   }

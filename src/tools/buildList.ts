@@ -4,7 +4,7 @@ import { dataSession } from "../adapters/session.js";
 import { buildList, loadFrequent } from "../core/listBuilder.js";
 import { getAdapter } from "../core/registry.js";
 import { toolError } from "../core/errors.js";
-import { formatClp, savingPct } from "../core/format.js";
+import { formatClp, priceScopeInfo, savingPct } from "../core/format.js";
 import type { FrequentCard } from "../core/types.js";
 import { progressNotifier } from "./progress.js";
 
@@ -119,6 +119,7 @@ export function registerBuildList(server: McpServer): void {
               text: JSON.stringify(
                 {
                   store,
+                  ...priceScopeInfo(branchId),
                   usedFrequent: frequentProducts.length > 0,
                   summary,
                   total: result.total,

@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { availableStores, getAdapter } from "../core/registry.js";
 import { toolError } from "../core/errors.js";
+import { priceScopeInfo } from "../core/format.js";
 
 /**
  * Tool de lectura de catálogo. Con sesión (fase 2) devolverá el precio
@@ -111,7 +112,13 @@ export function registerSearchProducts(server: McpServer): void {
             {
               type: "text",
               text: JSON.stringify(
-                { store, query, count: products.length, products },
+                {
+                  store,
+                  query,
+                  ...priceScopeInfo(branchId),
+                  count: products.length,
+                  products,
+                },
                 null,
                 2
               ),

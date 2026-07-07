@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClp, savingPct } from "../../src/core/format.js";
+import { formatClp, priceScopeInfo, savingPct } from "../../src/core/format.js";
 
 describe("formatClp", () => {
   it("formatea CLP con puntos de miles", () => {
@@ -21,5 +21,18 @@ describe("savingPct", () => {
     expect(savingPct(200, 1000)).toBe(20);
     expect(savingPct(0, 1000)).toBe(0);
     expect(savingPct(100, 0)).toBe(0);
+  });
+});
+
+describe("priceScopeInfo", () => {
+  it("con sucursal: alcance sucursal, sin nota", () => {
+    expect(priceScopeInfo("jumboclj512")).toEqual({ priceScope: "sucursal" });
+  });
+
+  it("sin sucursal: alcance nacional con nota que guía a discover_branch", () => {
+    const info = priceScopeInfo(undefined);
+    expect(info.priceScope).toBe("nacional");
+    expect(info.priceScopeNote).toContain("catálogo nacional");
+    expect(info.priceScopeNote).toContain("discover_branch");
   });
 });
