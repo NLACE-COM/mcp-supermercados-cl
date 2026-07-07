@@ -1,4 +1,4 @@
-import { normalizeUnit, parseClpString } from "../core/normalize.js";
+import { normalizeUnit, parseBundle, parseClpString } from "../core/normalize.js";
 import type {
   Cart,
   CartItem,
@@ -42,6 +42,10 @@ interface TottusProduct {
   prices?: TottusPrice[];
   measurements?: { format?: string; unit?: string };
   mediaUrls?: string[];
+  multipurposeBadges?: Array<{
+    label?: string;
+    promotionData?: { totalQuantityToBuy?: string };
+  }>;
   sellerName?: string;
 }
 
@@ -79,6 +83,25 @@ export class TottusAdapter implements StoreAdapter {
       ? normalizeUnit(internet.pum.label)
       : undefined;
 
+    // Bundles: multipurposeBadges ("2 X $2000") + totalQuantityToBuy.
+    const promotions = (p.multipurposeBadges ?? [])
+      .filter((b) => b.label)
+      .map((b) => {
+        const parsed = parseBundle(b.label);
+        if (!parsed) return undefined;
+        const qty = b.promotionData?.totalQuantityToBuy
+          ? Number(b.promotionData.totalQuantityToBuy)
+          : parsed.minQuantity;
+        return {
+          ...parsed,
+          ...(qty && Number.isFinite(qty) ? { minQuantity: qty } : {}),
+          ...(qty && parsed.bundlePrice
+            ? { unitPriceInBundle: Math.round(parsed.bundlePrice / qty) }
+            : {}),
+        };
+      })
+      .filter((b): b is NonNullable<typeof b> => b !== undefined && b.type === "bundle");
+
     return {
       store: this.id,
       id: String(p.skuId ?? p.productId),
@@ -90,6 +113,7 @@ export class TottusAdapter implements StoreAdapter {
       ...(pumPrice !== undefined ? { unitPrice: pumPrice } : {}),
       ...(pumUnit ? { unit: pumUnit } : {}),
       ...(p.measurements?.format ? { description: p.measurements.format } : {}),
+      ...(promotions.length > 0 ? { promotions } : {}),
       ...(listPrice !== undefined ? { offer: { type: "descuento" } } : {}),
       inStock: true,
       ...(p.mediaUrls?.[0] ? { imageUrl: p.mediaUrls[0] } : {}),

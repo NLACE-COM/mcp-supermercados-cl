@@ -28,6 +28,25 @@ export const OfferSchema = z.object({
 });
 export type Offer = z.infer<typeof OfferSchema>;
 
+/**
+ * Promoción multi-compra (bundle): "Combina 2 x $4.890", "Lleva 8 por
+ * $5.600", "2 X $3.000". Común a varias cadenas. Se estructura para que el
+ * modelo compare el precio efectivo por unidad al llevar el pack.
+ */
+export const PromotionSchema = z.object({
+  /** Texto original tal cual lo muestra la cadena */
+  description: z.string(),
+  /** "bundle" (N por $X) | "nxm" (ej. 4x3) | "descuento" | ... */
+  type: z.string(),
+  /** Unidades a llevar para el precio del bundle */
+  minQuantity: z.number().int().positive().optional(),
+  /** Precio total del pack en CLP */
+  bundlePrice: z.number().int().positive().optional(),
+  /** Precio efectivo por unidad dentro del bundle (bundlePrice / minQuantity) */
+  unitPriceInBundle: z.number().int().nonnegative().optional(),
+});
+export type Promotion = z.infer<typeof PromotionSchema>;
+
 export const PriceSchema = z.object({
   /** Precio vigente público en CLP (con oferta aplicada si la hay) */
   price: z.number().int().nonnegative(),
@@ -59,6 +78,11 @@ export const ProductSchema = z.object({
   /** Unidad base del unitPrice: "kg" | "lt" | "un" | ... */
   unit: z.string().optional(),
   offer: OfferSchema.optional(),
+  /**
+   * Promociones multi-compra (bundles) del producto: "Combina 2 x $4.890",
+   * "Lleva 8 por $5.600", etc. Presente en varias cadenas.
+   */
+  promotions: z.array(PromotionSchema).optional(),
   /**
    * Ingredientes del producto (de la ficha). Base para juicios de
    * "naturalidad" / "menos ingredientes" — el modelo razona sobre esta lista.

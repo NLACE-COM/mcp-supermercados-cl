@@ -84,7 +84,8 @@ Lectura de catálogo:
 
 - `search_products` — busca en cualquier cadena. Precios en CLP: `price`
   (vigente), `listPrice` (normal si hay oferta), `memberPrice` (socio),
-  `unitPrice`+`unit` (por kg/lt/un), stock, y con `branchId` precios de sucursal.
+  `unitPrice`+`unit` (por kg/lt/un), `promotions` (bundles tipo "2 x $2.000"
+  con precio efectivo por unidad), stock, y con `branchId` precios de sucursal.
 - `get_product` — detalle por URL/slug con precio socio y EAN (Jumbo: Prime;
   Santa Isabel: vía su BFF, sucursal por defecto o con `branchId`).
 - `get_offers` — ofertas vigentes de Jumbo, filtrables por categoría/sucursal;

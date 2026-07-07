@@ -1,4 +1,8 @@
-import { parseClpString, parseUnitPriceString } from "../core/normalize.js";
+import {
+  parseBundle,
+  parseClpString,
+  parseUnitPriceString,
+} from "../core/normalize.js";
 import type {
   Cart,
   CartItem,
@@ -53,6 +57,9 @@ interface LiderProduct {
     thumbnailUrl?: string;
     allImages?: Array<{ url?: string }>;
   };
+  badges?: {
+    flags?: Array<{ key?: string; text?: string; type?: string }>;
+  };
 }
 
 export class LiderAdapter implements StoreAdapter {
@@ -95,6 +102,13 @@ export class LiderAdapter implements StoreAdapter {
     const memberPrice = parseClpString(info.memberPriceString);
     const ppu = parseUnitPriceString(info.unitPrice);
 
+    // Bundles: badges.flags con promo multi-compra ("Combina 2 x $4.890").
+    // Se excluyen los flags que son solo etiqueta de oferta (ROLLBACK/Rebaja).
+    const promotions = (p.badges?.flags ?? [])
+      .filter((f) => f.text && f.type !== "ICON")
+      .map((f) => parseBundle(f.text))
+      .filter((b): b is NonNullable<typeof b> => b !== undefined && b.type === "bundle");
+
     return {
       store: this.id,
       id,
@@ -105,6 +119,7 @@ export class LiderAdapter implements StoreAdapter {
       ...(memberPrice !== undefined ? { memberPrice } : {}),
       ...(ppu ? { unitPrice: ppu.unitPrice, unit: ppu.unit } : {}),
       ...(p.shortDescription ? { description: p.shortDescription } : {}),
+      ...(promotions.length > 0 ? { promotions } : {}),
       ...(listPrice !== undefined ? { offer: { type: "descuento" } } : {}),
       inStock: p.availabilityStatus ? p.availabilityStatus === "IN_STOCK" : true,
       ...(imageUrl(p) ? { imageUrl: imageUrl(p) } : {}),

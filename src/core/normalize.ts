@@ -58,6 +58,61 @@ export function parseUnitPriceString(
   return { unitPrice, unit: normalizeUnit(m[2]) };
 }
 
+/**
+ * Parsea el texto de una promoción multi-compra a estructura. Reconoce los
+ * patrones comunes de las cadenas chilenas:
+ *  - "Combina 2 x $4.890" / "2 X $3.000" / "Lleva 8 por $5.600" -> bundle
+ *  - "4 por 3 a $2.700" / "2x1" -> nxm
+ * Devuelve undefined si no reconoce el patrón.
+ */
+export function parseBundle(
+  text: string | null | undefined
+):
+  | {
+      description: string;
+      type: string;
+      minQuantity?: number;
+      bundlePrice?: number;
+      unitPriceInBundle?: number;
+    }
+  | undefined {
+  if (!text || typeof text !== "string") return undefined;
+  const desc = text.trim().replace(/\s+/g, " ");
+  if (desc.length === 0) return undefined;
+
+  // "N x $X", "combina N x $X", "lleva N por $X" — el $ distingue del NxM.
+  const bundle = desc.match(
+    /(?:combina|lleva)?\s*(\d+)\s*(?:x|por)\s*\$\s*([\d.]+)/i
+  );
+  if (bundle) {
+    const minQuantity = Number(bundle[1]);
+    const bundlePrice = Number(bundle[2].replace(/\./g, ""));
+    if (
+      Number.isFinite(minQuantity) &&
+      minQuantity > 1 &&
+      Number.isFinite(bundlePrice) &&
+      bundlePrice > 0
+    ) {
+      return {
+        description: desc,
+        type: "bundle",
+        minQuantity,
+        bundlePrice,
+        unitPriceInBundle: Math.round(bundlePrice / minQuantity),
+      };
+    }
+  }
+
+  // "NxM" tipo "2x1", "3x2"
+  const nxm = desc.match(/(\d+)\s*x\s*(\d+)\b/i);
+  if (nxm && !/\$/.test(desc)) {
+    return { description: desc, type: "nxm", minQuantity: Number(nxm[1]) };
+  }
+
+  // Cualquier otra promo textual (la conservamos como descripción).
+  return { description: desc, type: "descuento" };
+}
+
 /** Normaliza etiquetas de unidad a formas cortas: kg, lt, un. */
 export function normalizeUnit(unit: string): string {
   const u = normalizeText(unit);

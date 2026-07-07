@@ -398,6 +398,34 @@ export class CencosudAdapter implements StoreAdapter {
       toClp(item.ppumPrice) ??
       computeUnitPrice(price, item.unitMultiplierUn as number | undefined);
 
+    // Bundles: promociones con mQuantity > 1 ("Lleva N por $X"). El precio
+    // total del pack es unitPrice * mQuantity. Excluimos las de socio (esas
+    // van como memberPrice) y las de 1 unidad (oferta simple).
+    const bundlePromos = promotions
+      .filter(
+        (p) =>
+          typeof p?.mQuantity === "number" &&
+          p.mQuantity > 1 &&
+          p.userProperties !== "PRIME_USER"
+      )
+      .map((p) => {
+        const minQuantity = p.mQuantity as number;
+        const unitInBundle = toClp(p.unitPrice);
+        return {
+          description:
+            (p.description as string) ||
+            `Lleva ${minQuantity}${unitInBundle ? ` por $${(unitInBundle * minQuantity).toLocaleString("es-CL")}` : ""}`,
+          type: "bundle",
+          minQuantity,
+          ...(unitInBundle !== undefined
+            ? {
+                bundlePrice: unitInBundle * minQuantity,
+                unitPriceInBundle: unitInBundle,
+              }
+            : {}),
+        };
+      });
+
     return {
       store: this.id,
       id: String(data.productId ?? item.skuId),
@@ -418,6 +446,7 @@ export class CencosudAdapter implements StoreAdapter {
         ? { nutritionalFlags: data.nutritionalFlags.map(String) }
         : {}),
       ...(offer ? { offer } : {}),
+      ...(bundlePromos.length > 0 ? { promotions: bundlePromos } : {}),
       inStock: item.stock === true,
       imageUrl: (item.images?.[0] as string | undefined) || undefined,
       url,

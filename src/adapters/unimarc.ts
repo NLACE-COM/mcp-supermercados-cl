@@ -1,4 +1,9 @@
-import { parseClpString, parseUnitPriceString } from "../core/normalize.js";
+import {
+  parseBundle,
+  parseClpString,
+  parseUnitPriceString,
+} from "../core/normalize.js";
+import type { Promotion } from "../core/types.js";
 import type {
   Cart,
   CartItem,
@@ -48,10 +53,41 @@ interface UnimarcProduct {
   priceDetail?: {
     promotionalTag?: { text?: string } | null;
   };
+  promotion?: {
+    descriptionMessage?: string;
+    hasSavings?: boolean;
+    itemsRequiredForPromotion?: number;
+    price?: number;
+    type?: string;
+  };
 }
 
 interface UnimarcSearchResponse {
   availableProducts?: UnimarcProduct[];
+}
+
+/**
+ * Bundle de Unimarc desde su objeto `promotion`. Usa los datos
+ * estructurados (itemsRequiredForPromotion, price efectivo por unidad) y cae
+ * al parseo del texto para el resto.
+ */
+function buildUnimarcBundle(promo: NonNullable<UnimarcProduct["promotion"]>): Promotion {
+  const parsed = parseBundle(promo.descriptionMessage) ?? {
+    description: promo.descriptionMessage!,
+    type: "bundle",
+  };
+  const minQuantity = promo.itemsRequiredForPromotion ?? parsed.minQuantity;
+  const unitPriceInBundle = promo.price ?? parsed.unitPriceInBundle;
+  const bundlePrice =
+    parsed.bundlePrice ??
+    (minQuantity && unitPriceInBundle ? minQuantity * unitPriceInBundle : undefined);
+  return {
+    description: parsed.description,
+    type: parsed.type,
+    ...(minQuantity ? { minQuantity } : {}),
+    ...(bundlePrice ? { bundlePrice } : {}),
+    ...(unitPriceInBundle !== undefined ? { unitPriceInBundle } : {}),
+  };
 }
 
 export class UnimarcAdapter implements StoreAdapter {
@@ -119,6 +155,14 @@ export class UnimarcAdapter implements StoreAdapter {
       ? `${SITE}/product${item.slug}`
       : undefined;
 
+    // Bundle: promotion con descriptionMessage ("2 x $2.000") y datos
+    // estructurados (itemsRequiredForPromotion + price efectivo por unidad).
+    const promo = p.promotion;
+    const promotions =
+      promo?.hasSavings && promo.descriptionMessage
+        ? [buildUnimarcBundle(promo)]
+        : [];
+
     return {
       store: this.id,
       id: item.sku,
@@ -133,6 +177,7 @@ export class UnimarcAdapter implements StoreAdapter {
       ...(item.description && item.description !== item.name
         ? { description: item.description }
         : {}),
+      ...(promotions.length > 0 ? { promotions } : {}),
       ...(offer ? { offer } : {}),
       inStock: true,
       ...(item.images?.[0] ? { imageUrl: item.images[0] } : {}),
