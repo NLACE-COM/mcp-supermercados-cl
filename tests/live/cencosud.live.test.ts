@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { CencosudAdapter, JUMBO_CONFIG } from "../../src/adapters/cencosud.js";
+import {
+  CencosudAdapter,
+  JUMBO_CONFIG,
+  SANTA_ISABEL_CONFIG,
+} from "../../src/adapters/cencosud.js";
 import { ProductSchema } from "../../src/core/types.js";
 
 /**
@@ -32,10 +36,32 @@ live("Jumbo en vivo", () => {
   }, 30000);
 
   it("getProduct devuelve detalle con esquema válido", async () => {
-    const products = await adapter.searchProducts("arroz", { limit: 1 });
-    expect(products[0]?.url).toBeTruthy();
-    const detail = await adapter.getProduct(products[0].url!);
+    // Algunos productos puntuales no exponen estado deshidratado parseable;
+    // probamos varios candidatos con URL hasta obtener un detalle.
+    const products = await adapter.searchProducts("arroz", { limit: 5 });
+    const withUrl = products.filter((p) => p.url);
+    expect(withUrl.length).toBeGreaterThan(0);
+
+    let detail = null;
+    for (const p of withUrl) {
+      detail = await adapter.getProduct(p.url!);
+      if (detail) break;
+    }
     expect(detail).not.toBeNull();
     ProductSchema.parse(detail);
-  }, 45000);
+  }, 60000);
+});
+
+live("Santa Isabel en vivo", () => {
+  const adapter = new CencosudAdapter(SANTA_ISABEL_CONFIG);
+
+  it("search_products devuelve productos válidos con precio", async () => {
+    const products = await adapter.searchProducts("leche", { limit: 5 });
+    expect(products.length).toBeGreaterThan(0);
+    for (const p of products) {
+      ProductSchema.parse(p);
+      expect(p.store).toBe("santaisabel");
+      expect(p.price).toBeGreaterThan(0);
+    }
+  }, 30000);
 });

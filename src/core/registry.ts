@@ -1,11 +1,15 @@
-import { CencosudAdapter, JUMBO_CONFIG } from "../adapters/cencosud.js";
+import {
+  CencosudAdapter,
+  JUMBO_CONFIG,
+  SANTA_ISABEL_CONFIG,
+} from "../adapters/cencosud.js";
 import type { StoreAdapter } from "../adapters/base.js";
 import type { StoreId } from "./types.js";
 
 /**
- * Mapa cadena -> adaptador. Fase 1: solo Jumbo. Santa Isabel se suma en
- * fase 4 reutilizando CencosudAdapter con SANTA_ISABEL_CONFIG (falta
- * verificar su host de Constructor). Unimarc/Tottus/Lider: fases 5-6.
+ * Mapa cadena -> adaptador. Jumbo (fases 1-3, ciclo completo) y Santa Isabel
+ * (fase 4, búsqueda vía el mismo adaptador Cencosud). Unimarc/Tottus/Lider:
+ * fases 5-6.
  */
 const adapters = new Map<StoreId, StoreAdapter>();
 
@@ -14,6 +18,7 @@ function register(adapter: StoreAdapter): void {
 }
 
 register(new CencosudAdapter(JUMBO_CONFIG));
+register(new CencosudAdapter(SANTA_ISABEL_CONFIG));
 
 export function getAdapter(store: StoreId): StoreAdapter {
   const adapter = adapters.get(store);

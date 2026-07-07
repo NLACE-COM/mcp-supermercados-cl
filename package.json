@@ -1,6 +1,6 @@
 {
   "name": "mcp-supermercados-cl",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Servidor MCP para armar la mejor lista de compra en supermercados chilenos. Fase 1: Jumbo lectura pública.",
   "license": "MIT",
   "type": "module",

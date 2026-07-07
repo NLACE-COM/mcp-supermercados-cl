@@ -14,7 +14,10 @@ export function registerSuggestSwaps(server: McpServer): void {
         "Devuelve el producto actual, los reemplazos ordenados por ahorro por unidad, y el ahorro. " +
         "Útil después de build_list para optimizar la lista.",
       inputSchema: {
-        store: z.enum(["jumbo"]).default("jumbo").describe("Cadena. Fase 1: jumbo."),
+        store: z
+          .enum(["jumbo", "santaisabel"])
+          .default("jumbo")
+          .describe("Cadena: jumbo o santaisabel."),
         items: z
           .array(z.string().min(1))
           .min(1)

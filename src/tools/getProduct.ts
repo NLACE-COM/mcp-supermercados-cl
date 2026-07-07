@@ -14,9 +14,9 @@ export function registerGetProduct(server: McpServer): void {
         "Acepta la URL del producto (campo `url` de search_products), el path o el slug.",
       inputSchema: {
         store: z
-          .enum(["jumbo"])
+          .enum(["jumbo", "santaisabel"])
           .default("jumbo")
-          .describe("Cadena. Fase 1: jumbo."),
+          .describe("Cadena. jumbo (con precio Prime). santaisabel: usar search_products (su ficha requiere comuna)."),
         idOrUrl: z
           .string()
           .min(1)

@@ -48,6 +48,21 @@ export interface CencosudBannerConfig {
   constructorKey: string;
   /** Base del sitio, para URLs de producto y fetch de PDP */
   siteBaseUrl: string;
+  /**
+   * Capacidades verificadas por banner. Distintos banners Cencosud comparten
+   * el backend de búsqueda (Constructor) pero difieren en frontend (Jumbo:
+   * React Query; Santa Isabel: VTEX renderData con comuna), así que no todos
+   * soportan lo mismo aún.
+   */
+  offersCollectionId?: string;
+  primeOffersCollectionId?: string;
+  /**
+   * Estilo de PDP para getProduct/memberPrice. "react-query": estado
+   * deshidratado (Jumbo, precio Prime sin login). "requires-locale": la PDP
+   * necesita comuna/tienda seleccionada y no sirve precios directos (Santa
+   * Isabel); getProduct no está soportado por HTTP directo.
+   */
+  pdpStyle: "react-query" | "requires-locale";
 }
 
 export const JUMBO_CONFIG: CencosudBannerConfig = {
@@ -55,35 +70,37 @@ export const JUMBO_CONFIG: CencosudBannerConfig = {
   constructorHost: "pwcdauseo-zone.cnstrc.com",
   constructorKey: "key_JopvNXKS61kwGkBe",
   siteBaseUrl: "https://www.jumbo.cl",
+  // Colecciones verificadas 2026-07-06: /jumbo-ofertas y /ofertas-prime.
+  offersCollectionId: "30399",
+  primeOffersCollectionId: "30307",
+  pdpStyle: "react-query",
 };
 
 /**
- * Santa Isabel comparte el backend de búsqueda. Verificado 2026-07-07:
- * su key responde en el host ESTÁNDAR de Constructor (ac.cnstrc.com) con
- * la misma forma de payload (SkuData incluido). Pendiente para habilitarla
- * en fase 4: su PDP no usa el estado React Query de Jumbo sino
- * `window.__renderData` (VTEX-style) con precios en 0 hasta seleccionar
- * tienda => getProduct/memberPrice requieren su propio parser + manejo de
- * tienda. Las URLs de producto que devuelve Constructor apuntan a
- * www.sisa.cl (redirigen a santaisabel.cl).
+ * Santa Isabel comparte el backend de BÚSQUEDA (Constructor). Verificado
+ * 2026-07-07: su key responde en el host estándar `ac.cnstrc.com` con la
+ * misma forma de payload (SkuData, sellingPrice, ofertas reales). La
+ * búsqueda es "casi gratis" reutilizando este adaptador.
+ *
+ * Diferencias (por eso solo search está habilitado):
+ * - PDP: usa `window.__renderData` (VTEX) y redirige a página vacía + exige
+ *   "Elige tu modo de entrega" (comuna). Precios en 0 sin comuna =>
+ *   getProduct/memberPrice por HTTP directo no aplican (pdpStyle
+ *   "requires-locale").
+ * - Ofertas: su página /santas-ofertas es VTEX (fq=H:categoría), no las
+ *   colecciones Constructor de Jumbo. Sin offersCollectionId por ahora.
+ * - Las URLs de producto de Constructor apuntan a www.sisa.cl.
  */
 export const SANTA_ISABEL_CONFIG: CencosudBannerConfig = {
   storeId: "santaisabel",
   constructorHost: "ac.cnstrc.com",
   constructorKey: "key_c73M3GMIWJ8AcNnd",
   siteBaseUrl: "https://www.santaisabel.cl",
+  pdpStyle: "requires-locale",
 };
 
 /** Versión del cliente ciojs observada en producción (param `c`). */
 const CIO_CLIENT_VERSION = "ciojs-2.1436.4";
-
-/**
- * Colecciones de ofertas de Jumbo (verificadas 2026-07-06): las páginas
- * /jumbo-ofertas y /ofertas-prime son browse de Constructor sobre estas
- * colecciones (SSR `originalUrl: /busca?fq=H:<id>`).
- */
-const OFFERS_COLLECTION_ID = "30399";
-const PRIME_OFFERS_COLLECTION_ID = "30307";
 
 // --- Tipos mínimos de la respuesta de Constructor.io (solo lo que usamos) ---
 
@@ -261,6 +278,13 @@ export class CencosudAdapter implements StoreAdapter {
   // ------------------------------------------------------------------
 
   async getProduct(idOrUrl: string, _session?: Session): Promise<Product | null> {
+    if (this.config.pdpStyle === "requires-locale") {
+      throw new Error(
+        `get_product no está disponible para ${this.id}: su ficha requiere ` +
+          `seleccionar comuna/tienda y no expone precios por HTTP directo. ` +
+          `Usar search_products, que sí trae precios. Ver docs §Santa Isabel.`
+      );
+    }
     const url = this.resolveProductUrl(idOrUrl);
     if (!url) return null;
     return this.productCache.getOrFetch(`pdp:${url}`, async () => {
@@ -362,8 +386,16 @@ export class CencosudAdapter implements StoreAdapter {
 
   private async fetchOffers(opts: OfferOpts): Promise<Product[]> {
     const collectionId = opts.primeOnly
-      ? PRIME_OFFERS_COLLECTION_ID
-      : OFFERS_COLLECTION_ID;
+      ? this.config.primeOffersCollectionId
+      : this.config.offersCollectionId;
+
+    if (!collectionId) {
+      throw new Error(
+        `get_offers${opts.primeOnly ? " (primeOnly)" : ""} no está disponible ` +
+          `para ${this.id}: no hay colección de ofertas verificada para este ` +
+          `banner. Usar search_products (trae precios y ofertas por producto).`
+      );
+    }
 
     let groupId: string | undefined;
     if (opts.category) {

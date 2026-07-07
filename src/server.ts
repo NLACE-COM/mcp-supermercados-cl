@@ -11,7 +11,7 @@ import { registerSuggestSwaps } from "./tools/suggestSwaps.js";
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "mcp-supermercados-cl",
-    version: "0.4.0",
+    version: "0.5.0",
   });
 
   // Núcleo: armar la mejor lista con la sesión del usuario

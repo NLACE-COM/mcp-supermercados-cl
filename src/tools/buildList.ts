@@ -19,7 +19,10 @@ export function registerBuildList(server: McpServer): void {
         "con sesión iniciada), se priorizan: la lista se arma con lo que la persona realmente compra. " +
         "Si el usuario prefiere marcas específicas, incluirlas en el texto del ítem (ej. \"leche colun\").",
       inputSchema: {
-        store: z.enum(["jumbo"]).default("jumbo").describe("Cadena. Fase 1: jumbo."),
+        store: z
+          .enum(["jumbo", "santaisabel"])
+          .default("jumbo")
+          .describe("Cadena: jumbo o santaisabel."),
         items: z
           .array(z.string().min(1))
           .min(1)

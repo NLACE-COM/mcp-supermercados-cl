@@ -14,9 +14,9 @@ export function registerGetOffers(server: McpServer): void {
         "(el monto exacto del precio socio se consulta con get_product).",
       inputSchema: {
         store: z
-          .enum(["jumbo"])
+          .enum(["jumbo", "santaisabel"])
           .default("jumbo")
-          .describe("Cadena. Fase 1: jumbo."),
+          .describe("Cadena. jumbo (colecciones verificadas). santaisabel: aún sin colección de ofertas."),
         category: z
           .string()
           .optional()

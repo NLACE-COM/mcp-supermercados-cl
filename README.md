@@ -5,13 +5,14 @@ chileno, empezando por Jumbo. El foco es profundidad en la cadena donde el
 usuario ya compra (precios club, beneficios por RUT, historial), no la
 comparación entre cadenas.
 
-**Estado: Fases 1-3 en Jumbo ✅ (búsqueda, sesión, lista y carro).**
+**Estado: Jumbo completo (fases 1-3) · Santa Isabel búsqueda (fase 4).**
 
 | Fase | Alcance | Estado |
 |---|---|---|
 | 1 | Jumbo lectura pública (`search_products`, `get_product`, `get_offers`) | ✅ completa |
 | 2 | Jumbo con sesión: productos frecuentes, precio socio Prime | `get_frequent_purchases` + `get_member_price` ✅ · listas guardadas pendiente |
 | 3 | `build_list` (prioriza frecuentes), `suggest_swaps`, carro (`add_to_cart`, `get_cart`) | ✅ completa |
+| 4 | Santa Isabel (mismo adaptador Cencosud) | `search_products` ✅ (precios y ofertas reales) · su ficha/ofertas requieren comuna, pendientes |
 | 4 | Santa Isabel (mismo adaptador Cencosud) | pendiente |
 | 5-7 | Unimarc, Tottus, Lider, `compare_stores` | pendiente |
 
