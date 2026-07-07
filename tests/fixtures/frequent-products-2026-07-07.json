@@ -1,0 +1,91 @@
+{
+  "_comment": "Productos frecuentes REALES capturados del DOM de jumbo.cl (sesión del usuario, sucursal jumboclj512) el 2026-07-07. Estructura tal como la entrega el DOM de la card: data-cnstrc-item-* + texto de precios. El parser opera sobre esto. Incluye el caso del Salame con precio Prime que el usuario mostró en foto.",
+  "capturedAt": "2026-07-07",
+  "branchId": "jumboclj512",
+  "products": [
+    {
+      "id": "11149",
+      "name": "Salame Artesanal Receta del Abuelo Granel",
+      "dataPrice": "1472",
+      "href": "/salame-artesanal-receta-del-abuelo-granel/p",
+      "vigente": "$1.472$1.840",
+      "tachado": "$1.840",
+      "ppuNodes": ["$14.720 x kg", "$12.880 x kg"],
+      "prime": "Paga $1.288",
+      "dcto": "20% dcto.",
+      "innerText": "Oferta | 20% dcto. | $1.472 | $1.840 x 100 g | $14.720 x kg | Paga $1.288 | $12.880 x kg | Receta del Abuelo | Salame Artesanal Receta del Abuelo Granel | 300 g | 3.0"
+    },
+    {
+      "id": "165423",
+      "name": "Yogurt Soprole Proteína Power Frutilla 155 g",
+      "dataPrice": "720",
+      "href": "/yogurt-fruti-155g-2063989/p",
+      "vigente": "$720$900",
+      "tachado": "$900",
+      "ppuNodes": ["$4.516 x kg", "$4.645 x kg", "$4.355 x kg"],
+      "prime": null,
+      "dcto": null,
+      "innerText": "Exclusivo online | Lleva 8 por $5.600 | $4.516 x kg | $720 | $900 | $4.645 x kg | 4 por 3 a $2.700 | $4.355 x kg | Soprole | Yogurt Soprole Proteína Power Frutilla 155 g | 8 un | Producto sin calificar"
+    },
+    {
+      "id": "10805",
+      "name": "Queso Gauda Soprole Envasado Laminado 500 g",
+      "dataPrice": "5690",
+      "href": "/queso-gouda-soproles-500-g-2/p",
+      "vigente": "$5.690$6.230",
+      "tachado": "$6.230",
+      "ppuNodes": ["$11.380 x kg"],
+      "prime": null,
+      "dcto": null,
+      "innerText": "Exclusivo online | $5.690 | $6.230 | $11.380 x kg | Soprole | Queso Gauda Soprole Envasado Laminado 500 g | 1 un | 4.5"
+    },
+    {
+      "id": "137417",
+      "name": "Carne Molida Vacuno 10% Grasa 500 g",
+      "dataPrice": "5990",
+      "href": "/carne-molida-vacuno-10-500g-prodj-1995701/p",
+      "vigente": "$5.990",
+      "tachado": null,
+      "ppuNodes": ["$11.980 x kg"],
+      "prime": null,
+      "dcto": null,
+      "innerText": "$5.990 | $11.980 x kg | Cuisine & Co | Carne Molida Vacuno 10% Grasa 500 g | Agregar | 4.7"
+    },
+    {
+      "id": "92628",
+      "name": "Arroz Grado 2 Cuisine & Co Largo y Delgado 1 kg",
+      "dataPrice": "1390",
+      "href": "/arroz-largo-fino-1-kg-cuisine-and-co-1845787/p",
+      "vigente": "$1.390",
+      "tachado": null,
+      "ppuNodes": ["$1.390 x kg"],
+      "prime": null,
+      "dcto": null,
+      "innerText": "$1.390 | $1.390 x kg | Cuisine & Co | Arroz Grado 2 Cuisine & Co Largo y Delgado 1 kg | Agregar | 4.5"
+    },
+    {
+      "id": "11947",
+      "name": "Vino Caliterra Reserva Carmenere 750 cc",
+      "dataPrice": "5790",
+      "href": "/carmenere-vina-caliterra-750-cc-reserva/p",
+      "vigente": "$5.790",
+      "tachado": null,
+      "ppuNodes": ["$7.720 x lt"],
+      "prime": null,
+      "dcto": null,
+      "innerText": "$5.790 | $7.720 x lt | Caliterra | Vino Caliterra Reserva Carmenere 750 cc | Agregar | 5.0"
+    },
+    {
+      "id": "5872",
+      "name": "Papa Malla 2 kg",
+      "dataPrice": "2590",
+      "href": "/papas-jumbo-malla-2-kg/p",
+      "vigente": "$2.590",
+      "tachado": null,
+      "ppuNodes": ["$1.295 x kg"],
+      "prime": null,
+      "dcto": null,
+      "innerText": "$2.590 | $1.295 x kg | Frutas y Verduras Propias | Papa Malla 2 kg | 1 un | 4.2"
+    }
+  ]
+}

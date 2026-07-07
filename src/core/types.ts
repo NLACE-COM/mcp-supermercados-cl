@@ -66,15 +66,48 @@ export const ProductSchema = z.object({
 export type Product = z.infer<typeof ProductSchema>;
 
 /**
- * Sesión de usuario en una cadena. Fase 2: se llenará desde el navegador
- * del usuario (Playwright con su perfil) o cookies exportadas. El servidor
- * MCP nunca ve credenciales, solo material de sesión ya emitido.
+ * Sesión de usuario en una cadena. El servidor MCP nunca ve ni pide
+ * credenciales: recibe material de sesión ya emitido por el navegador del
+ * usuario.
+ *
+ * Verificado en Jumbo (2026-07-07): el token de sesión vive en el
+ * localStorage del sitio (`sessionDataToken`, `userData`), no solo en
+ * cookies. Por eso la vía de producción es un `SessionProvider` que opera
+ * el navegador del usuario (Playwright con su perfil) y entrega el HTML ya
+ * autenticado de las páginas de cuenta. Ver `adapters/session.ts`.
  */
 export interface Session {
   store: StoreId;
-  cookies?: Record<string, string>;
   /** Sucursal/tienda asociada a la sesión (ej: "jumboclj512") */
   branchId?: string;
+  /**
+   * Provider que devuelve el HTML autenticado de una ruta del sitio
+   * (ej. "/productos-frecuentes"). Lo implementa el puente de navegador.
+   */
+  fetchAuthedHtml?: (path: string) => Promise<string>;
+  /**
+   * Alternativa: el DOM de productos ya extraído por el navegador, para
+   * cuando el puente prefiere entregar datos en vez de HTML crudo.
+   */
+  frequentCards?: FrequentCard[];
+}
+
+/**
+ * Representación cruda de una card de producto tal como la entrega el DOM
+ * de Jumbo (atributos data-cnstrc-item-* + textos de precio). El parser la
+ * normaliza a Product.
+ */
+export interface FrequentCard {
+  id: string;
+  name: string;
+  /** Valor de data-cnstrc-item-price: precio vigente confiable */
+  dataPrice?: string;
+  href?: string | null;
+  tachado?: string | null;
+  ppuNodes?: string[];
+  /** Texto "Paga $X" del badge Prime */
+  prime?: string | null;
+  innerText?: string;
 }
 
 export const CartItemSchema = z.object({

@@ -1,5 +1,6 @@
 import type { StoreAdapter } from "../adapters/base.js";
-import type { Product } from "./types.js";
+import { normalizeText } from "./normalize.js";
+import type { Product, Session } from "./types.js";
 
 /**
  * Lógica de armado de lista (fase 3). Versión pública: resuelve ítems en
@@ -17,6 +18,8 @@ export interface ResolvedItem {
   alternatives: Product[];
   /** Ahorro en CLP del elegido si está en oferta (listPrice - price) */
   saving: number;
+  /** true si el elegido es un producto que el usuario ya compra (frecuente) */
+  fromFrequent?: boolean;
   /** Nota cuando algo requiere juicio del usuario/modelo */
   note?: string;
 }
@@ -33,6 +36,43 @@ export interface ResolveOpts {
   branchId?: string;
   /** Candidatos a traer por ítem (default 8) */
   perItemLimit?: number;
+  /**
+   * Productos frecuentes del usuario. Si un ítem hace match con uno de
+   * estos, se prioriza (es el núcleo del producto: armar la lista con lo
+   * que la persona realmente compra). Se llenan con getFrequentPurchases.
+   */
+  frequentProducts?: Product[];
+}
+
+/**
+ * ¿Alguno de los frecuentes matchea la query? Match laxo: todas las
+ * palabras significativas de la query aparecen en el nombre del frecuente.
+ */
+export function matchFrequent(
+  query: string,
+  frequent: Product[]
+): Product | undefined {
+  const words = normalizeText(query)
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+  if (words.length === 0) return undefined;
+
+  const matches = frequent
+    .filter((p) => p.inStock)
+    .filter((p) => {
+      const name = normalizeText(p.name);
+      return words.every((w) => name.includes(w));
+    });
+  if (matches.length === 0) return undefined;
+
+  // Entre los frecuentes que matchean, el de mejor precio por unidad (o
+  // precio absoluto si no hay unidad comparable).
+  return matches.sort((a, b) => {
+    if (a.unitPrice !== undefined && b.unitPrice !== undefined) {
+      return a.unitPrice - b.unitPrice;
+    }
+    return a.price - b.price;
+  })[0];
 }
 
 /**
@@ -74,17 +114,27 @@ export async function resolveItem(
     branchId: opts.branchId,
   });
   const ranked = rankCandidates(candidates);
-  const chosen = ranked[0] ?? null;
+
+  // Núcleo del producto: si el usuario ya compra algo que matchea, va
+  // primero, aunque el buscador lo rankee más abajo.
+  const frequentMatch = opts.frequentProducts
+    ? matchFrequent(query, opts.frequentProducts)
+    : undefined;
+
+  const chosen = frequentMatch ?? ranked[0] ?? null;
+  // Alternativas: el ranking por conveniencia, sin repetir al elegido.
+  const alternatives = ranked.filter((p) => p.id !== chosen?.id).slice(0, 3);
 
   return {
     query,
     chosen,
-    alternatives: ranked.slice(1, 4),
+    alternatives,
     saving: chosen?.listPrice ? chosen.listPrice - chosen.price : 0,
+    ...(frequentMatch ? { fromFrequent: true } : {}),
     ...(chosen === null
       ? { note: "Sin resultados con stock para este ítem." }
       : {}),
-    ...(chosen && ranked.length > 1 && !chosen.unitPrice
+    ...(!frequentMatch && chosen && ranked.length > 1 && !chosen.unitPrice
       ? { note: "Elegido por precio absoluto (sin precio por unidad comparable)." }
       : {}),
   };
@@ -104,6 +154,23 @@ export async function buildList(
   const total = items.reduce((sum, i) => sum + (i.chosen?.price ?? 0), 0);
   const totalSaving = items.reduce((sum, i) => sum + i.saving, 0);
   return { items, total, totalSaving };
+}
+
+/**
+ * Trae los frecuentes del usuario si la sesión lo permite; si no hay
+ * sesión o el adaptador no los soporta aún, devuelve [] (build_list sigue
+ * funcionando en modo público). No revienta el flujo por falta de sesión.
+ */
+export async function loadFrequent(
+  adapter: StoreAdapter,
+  session?: Session
+): Promise<Product[]> {
+  if (!session) return [];
+  try {
+    return await adapter.getFrequentPurchases(session);
+  } catch {
+    return [];
+  }
 }
 
 export interface Swap {

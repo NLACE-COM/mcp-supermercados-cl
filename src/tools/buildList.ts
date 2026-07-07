@@ -1,7 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { buildList } from "../core/listBuilder.js";
+import { dataSession } from "../adapters/session.js";
+import { buildList, loadFrequent } from "../core/listBuilder.js";
 import { getAdapter } from "../core/registry.js";
+import type { FrequentCard } from "../core/types.js";
 
 export function registerBuildList(server: McpServer): void {
   server.registerTool(
@@ -13,8 +15,9 @@ export function registerBuildList(server: McpServer): void {
         "concretos del catálogo, eligiendo por mejor precio por unidad y ofertas vigentes. Devuelve por ítem el " +
         "producto elegido, hasta 3 alternativas para ajustar, el ahorro por ofertas, y el total estimado en CLP. " +
         "Con `branchId` usa precios/stock de esa sucursal. " +
-        "Nota fase 1: aún sin sesión, no prioriza los productos frecuentes del usuario (llega en fase 2); " +
-        "si el usuario prefiere marcas específicas, incluirlas en el texto del ítem (ej. \"leche colun\").",
+        "Si se entregan los productos frecuentes del usuario en `frequentCards` (desde get_frequent_purchases " +
+        "con sesión iniciada), se priorizan: la lista se arma con lo que la persona realmente compra. " +
+        "Si el usuario prefiere marcas específicas, incluirlas en el texto del ítem (ej. \"leche colun\").",
       inputSchema: {
         store: z.enum(["jumbo"]).default("jumbo").describe("Cadena. Fase 1: jumbo."),
         items: z
@@ -26,12 +29,39 @@ export function registerBuildList(server: McpServer): void {
           .string()
           .optional()
           .describe("Código de sucursal para precios locales, ej. \"jumboclj512\"."),
+        frequentCards: z
+          .array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              dataPrice: z.string().optional(),
+              href: z.string().nullable().optional(),
+              tachado: z.string().nullable().optional(),
+              ppuNodes: z.array(z.string()).optional(),
+              prime: z.string().nullable().optional(),
+              innerText: z.string().optional(),
+            })
+          )
+          .optional()
+          .describe(
+            "Productos frecuentes del usuario (cards del DOM de la sesión) para priorizar lo que ya compra."
+          ),
       },
     },
-    async ({ store, items, branchId }) => {
+    async ({ store, items, branchId, frequentCards }) => {
       try {
         const adapter = getAdapter(store);
-        const result = await buildList(adapter, items, { branchId });
+        const session = frequentCards?.length
+          ? dataSession(store, {
+              branchId,
+              frequentCards: frequentCards as FrequentCard[],
+            })
+          : undefined;
+        const frequentProducts = await loadFrequent(adapter, session);
+        const result = await buildList(adapter, items, {
+          branchId,
+          frequentProducts,
+        });
         return {
           content: [
             {
@@ -39,6 +69,7 @@ export function registerBuildList(server: McpServer): void {
               text: JSON.stringify(
                 {
                   store,
+                  usedFrequent: frequentProducts.length > 0,
                   total: result.total,
                   totalSaving: result.totalSaving,
                   items: result.items,

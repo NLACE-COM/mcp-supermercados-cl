@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StoreAdapter } from "../../src/adapters/base.js";
 import {
   buildList,
+  matchFrequent,
   rankCandidates,
   suggestSwaps,
 } from "../../src/core/listBuilder.js";
@@ -82,6 +83,59 @@ describe("buildList", () => {
     expect(result.items[1].chosen).toBeNull();
     expect(result.items[1].note).toMatch(/Sin resultados/);
     expect(result.total).toBe(990);
+  });
+});
+
+describe("matchFrequent", () => {
+  const frequent = [
+    product({ id: "f1", name: "Arroz Grado 2 Cuisine & Co 1 kg", price: 1390, unitPrice: 1390, unit: "kg" }),
+    product({ id: "f2", name: "Leche Colun Entera 1 L", price: 1090, unitPrice: 1090, unit: "lt" }),
+  ];
+
+  it("matchea cuando todas las palabras de la query están en el nombre", () => {
+    expect(matchFrequent("arroz", frequent)?.id).toBe("f1");
+    expect(matchFrequent("leche colun", frequent)?.id).toBe("f2");
+  });
+
+  it("no matchea si falta una palabra significativa", () => {
+    expect(matchFrequent("leche descremada", frequent)).toBeUndefined();
+  });
+
+  it("ignora productos frecuentes sin stock", () => {
+    const sinStock = [product({ id: "x", name: "Pan Molde", inStock: false })];
+    expect(matchFrequent("pan", sinStock)).toBeUndefined();
+  });
+});
+
+describe("buildList con frecuentes (fase 2)", () => {
+  it("prioriza el producto frecuente aunque el buscador rankee otro primero", async () => {
+    const adapter = fakeAdapter({
+      arroz: [
+        product({ id: "barato", name: "Arroz Marca X 1 kg", price: 990, unitPrice: 990, unit: "kg" }),
+        product({ id: "f1", name: "Arroz Grado 2 Cuisine & Co 1 kg", price: 1390, unitPrice: 1390, unit: "kg" }),
+      ],
+    });
+    const frequentProducts = [
+      product({ id: "f1", name: "Arroz Grado 2 Cuisine & Co 1 kg", price: 1390, unitPrice: 1390, unit: "kg", memberPrice: 1290 }),
+    ];
+
+    const result = await buildList(adapter, ["arroz"], { frequentProducts });
+    expect(result.items[0].chosen?.id).toBe("f1");
+    expect(result.items[0].fromFrequent).toBe(true);
+    // el más barato del buscador queda como alternativa
+    expect(result.items[0].alternatives.map((p) => p.id)).toContain("barato");
+  });
+
+  it("sin match en frecuentes usa el ranking público normal", async () => {
+    const adapter = fakeAdapter({
+      detergente: [product({ id: "d1", name: "Detergente Omo 3 kg", price: 8990, unitPrice: 2996, unit: "kg" })],
+    });
+    const frequentProducts = [
+      product({ id: "f1", name: "Arroz Cuisine & Co 1 kg", price: 1390 }),
+    ];
+    const result = await buildList(adapter, ["detergente"], { frequentProducts });
+    expect(result.items[0].chosen?.id).toBe("d1");
+    expect(result.items[0].fromFrequent).toBeUndefined();
   });
 });
 

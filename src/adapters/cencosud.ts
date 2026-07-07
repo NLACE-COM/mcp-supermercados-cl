@@ -14,6 +14,10 @@ import type {
 } from "../core/types.js";
 import { defaultHttpClient, type HttpFetcher } from "../http/client.js";
 import { NotImplementedError, type StoreAdapter } from "./base.js";
+import {
+  extractFrequentCardsFromHtml,
+  parseFrequentCard,
+} from "./cencosudSession.js";
 
 /**
  * Adaptador Cencosud (Jumbo + Santa Isabel).
@@ -445,16 +449,54 @@ export class CencosudAdapter implements StoreAdapter {
     );
   }
 
-  async getFrequentPurchases(_session: Session): Promise<Product[]> {
-    throw new NotImplementedError(this.id, "getFrequentPurchases", "fase 2");
+  /**
+   * Productos frecuentes del usuario (fase 2). Requiere sesión: el token
+   * vive en el localStorage del navegador, así que la sesión debe traer un
+   * puente autenticado (`fetchAuthedHtml`) o las cards ya extraídas
+   * (`frequentCards`). Ver adapters/session.ts y docs.
+   */
+  async getFrequentPurchases(session: Session): Promise<Product[]> {
+    const cards = await this.resolveFrequentCards(session);
+    return cards
+      .map((c) => parseFrequentCard(c, this.id, this.config.siteBaseUrl))
+      .filter((p): p is Product => p !== null);
+  }
+
+  private async resolveFrequentCards(session: Session) {
+    if (session.frequentCards?.length) return session.frequentCards;
+    if (session.fetchAuthedHtml) {
+      const html = await session.fetchAuthedHtml("/productos-frecuentes?page=1");
+      return extractFrequentCardsFromHtml(html);
+    }
+    throw new Error(
+      "getFrequentPurchases requiere una sesión con puente de navegador " +
+        "(fetchAuthedHtml) o cards ya extraídas (frequentCards). El token de " +
+        "Jumbo vive en localStorage; ver docs/captura-cencosud-2026-07-06.md §sesión."
+    );
   }
 
   async getSavedLists(_session: Session): Promise<ShoppingList[]> {
-    throw new NotImplementedError(this.id, "getSavedLists", "fase 2");
+    throw new NotImplementedError(this.id, "getSavedLists", "fase 2 (siguiente paso)");
   }
 
-  async getMemberPrice(_id: string, _session: Session): Promise<Price> {
-    throw new NotImplementedError(this.id, "getMemberPrice", "fase 2");
+  /**
+   * Precio socio (Prime) de un producto para el usuario logueado. El precio
+   * Prime ya es visible sin login en la PDP, así que se obtiene con
+   * getProduct y se expone su memberPrice. Con sesión, se devuelve igual;
+   * el valor es el precio que paga el socio.
+   */
+  async getMemberPrice(id: string, _session: Session): Promise<Price> {
+    const product = await this.getProduct(id);
+    if (!product) {
+      throw new Error(`No se encontró el producto "${id}" para precio socio.`);
+    }
+    return {
+      price: product.price,
+      ...(product.listPrice !== undefined ? { listPrice: product.listPrice } : {}),
+      ...(product.memberPrice !== undefined
+        ? { memberPrice: product.memberPrice }
+        : {}),
+    };
   }
 
   async addToCart(_items: CartItem[], _session: Session): Promise<Cart> {

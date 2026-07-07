@@ -5,13 +5,13 @@ chileno, empezando por Jumbo. El foco es profundidad en la cadena donde el
 usuario ya compra (precios club, beneficios por RUT, historial), no la
 comparación entre cadenas.
 
-**Estado: Fase 1 completa · Fase 3 parcial (versión pública de `build_list`/`suggest_swaps`).**
+**Estado: Fase 1 completa · Fase 2 (frecuentes + precio Prime) ✅ · Fase 3 parcial.**
 
 | Fase | Alcance | Estado |
 |---|---|---|
 | 1 | Jumbo lectura pública (`search_products`, `get_product`, `get_offers`) | ✅ completa |
-| 2 | Jumbo con sesión: precio club, frecuentes, listas guardadas | pendiente (requiere login del usuario) |
-| 3 | `build_list`, `suggest_swaps`, carro | `build_list`+`suggest_swaps` públicos ✅ · integración con historial y carro pendientes |
+| 2 | Jumbo con sesión: productos frecuentes, precio socio Prime | `get_frequent_purchases` + `get_member_price` ✅ · listas guardadas pendiente |
+| 3 | `build_list`, `suggest_swaps`, carro | `build_list` (prioriza frecuentes) + `suggest_swaps` ✅ · carro pendiente |
 | 4 | Santa Isabel (mismo adaptador Cencosud) | pendiente |
 | 5-7 | Unimarc, Tottus, Lider, `compare_stores` | pendiente |
 
@@ -40,8 +40,12 @@ O en desarrollo: `npm run inspector` (MCP Inspector) / `npm run dev`.
 ## Tools
 
 - `build_list` — convierte una lista en lenguaje natural en productos
-  concretos: mejor precio por unidad + ofertas, con alternativas por ítem,
-  total estimado y ahorro. (Con sesión, fase 2, priorizará tus frecuentes.)
+  concretos: prioriza tus **productos frecuentes** (si se pasan sus cards de
+  sesión), luego mejor precio por unidad + ofertas, con alternativas por
+  ítem, total estimado y ahorro.
+- `get_frequent_purchases` — tus productos habituales normalizados, con
+  precio vigente, normal y **precio socio Jumbo Prime**. Requiere sesión: el
+  cliente entrega las cards del DOM (el servidor nunca ve credenciales).
 - `suggest_swaps` — reemplazos comparables con mejor precio por unidad.
 - `adapter_status` — diagnóstico en vivo de las cadenas soportadas.
 - `search_products` — busca en Jumbo. Devuelve precios normalizados en CLP:

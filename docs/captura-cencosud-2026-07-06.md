@@ -127,6 +127,32 @@ GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30307   ← /ofertas-
   no está en los bundles públicos revisados. Pendiente: capturarla en fase 2
   desde una sesión logueada (o seguir usando el SSR de la PDP, que basta).
 
+## 4b. Sesión y área autenticada (fase 2, capturado 2026-07-07)
+
+Con sesión iniciada del usuario (sin que el MCP toque credenciales):
+
+- **Dónde vive la sesión**: el token de autenticación está en el
+  **localStorage** del sitio (`sessionDataToken`, `userData`,
+  `refreshTokenEmail`), además de cookies. Consecuencia: exportar cookies NO
+  basta; hay que operar el navegador ya logueado. Vía de producción:
+  Playwright con el perfil de Chrome del usuario (opción 1 del plan).
+- **Backend autenticado**: `be-reg-groceries-bff-jumbo.ecomm.cencosud.com`
+  y rutas `user/api/v1/*` de `sm-web-api`, con headers `token` /
+  `Authorization` / `apiKey` / `x-consumer` / `x-account`.
+- **Productos frecuentes**: `https://www.jumbo.cl/productos-frecuentes` es un
+  shell client-side; los productos se renderizan en el DOM como cards con
+  `data-cnstrc-item-id` / `-name` / `-price` y `href` a la PDP. Cada card
+  trae en texto: precio vigente, precio tachado (`.line-through`), precio por
+  unidad (`.ppum-price-container`) y **badge "Paga $X" = precio Prime**.
+- **Precio Prime confirmado** (ej. usuario): Salame $1.472 (oferta, 20% dcto)
+  / normal $1.840 / **Prime $1.288**. El parser (`adapters/cencosudSession.ts`)
+  usa `data-cnstrc-item-price` para el vigente (el nodo visible a veces trae
+  vigente+tachado pegados) y "Paga $X" para `memberPrice`.
+- **Puente de sesión**: `adapters/session.ts` define `BrowserBridge`
+  (`fetchAuthedHtml`) y `dataSession` (cards ya extraídas). La tool
+  `get_frequent_purchases` recibe las cards del navegador del usuario; el
+  servidor nunca ve el token.
+
 ## 5. Implicancias para el adaptador
 
 1. Búsqueda: Constructor.io directo, sin navegador. `sellingPrice` como
