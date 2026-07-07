@@ -1,0 +1,98 @@
+{
+  "_comment": "Esquema REAL del carro Jumbo capturado con sesión del usuario el 2026-07-07. Endpoints: GET /cart?store={branchId}&simulationTotals=true (leer), PATCH /cart/items (agregar/actualizar). Items anonimizados a 2 ejemplos representativos. El precio socio del carro sale de las promotions con userProperties PRIME_USER y de totals.itemDiscounts.details / simulation.*.discountDetails.details (clave PRIME_USER).",
+  "endpoints": {
+    "read": "GET https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com/cart?store={branchId}&simulationTotals=true",
+    "mutate": "PATCH https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com/cart/items"
+  },
+  "patchBody": {
+    "items": [
+      {
+        "skuId": "92628",
+        "quantity": 3,
+        "isUnitary": false,
+        "giftable": false,
+        "itemQuantityLimit": 18,
+        "isUnitaryEligible": false,
+        "sponsoredId": null,
+        "measurementUnitUn": "kg",
+        "unitMultiplierUn": 1,
+        "soldBy": "Jumbo"
+      }
+    ],
+    "store": "jumboclj512"
+  },
+  "cart": {
+    "itemsQuantity": 66,
+    "items": [
+      {
+        "skuId": "165423",
+        "productId": "163000",
+        "name": "Yogurt Soprole Proteína Power Frutilla 155 g",
+        "brand": "Soprole",
+        "quantity": 8,
+        "measurementUnit": "un",
+        "measurementUnitUn": "kg",
+        "unitMultiplierUn": 0.155,
+        "status": "available",
+        "soldBy": "Jumbo",
+        "itemQuantityLimit": 40,
+        "prices": {
+          "listPrice": 900,
+          "totalListPrice": 7200,
+          "price": 675,
+          "totalPrice": 5400
+        },
+        "promotions": [
+          { "type": "mxn", "unitPrice": 675, "userProperties": "PRIME_USER", "applied": true },
+          { "type": "mx", "unitPrice": 700, "userProperties": "ALL", "applied": false },
+          { "type": "percentual", "unitPrice": 720, "userProperties": "ALL", "applied": false }
+        ]
+      },
+      {
+        "skuId": "10553",
+        "productId": "10500",
+        "name": "Spaghetti N°5 Lucchetti 400 g",
+        "brand": "Lucchetti",
+        "quantity": 4,
+        "measurementUnit": "un",
+        "measurementUnitUn": "kg",
+        "unitMultiplierUn": 0.4,
+        "status": "available",
+        "soldBy": "Jumbo",
+        "itemQuantityLimit": 40,
+        "prices": {
+          "listPrice": 1060,
+          "totalListPrice": 4240,
+          "price": 750,
+          "totalPrice": 3000
+        },
+        "promotions": [
+          { "type": "mxn", "unitPrice": 750, "userProperties": "ALL", "applied": true }
+        ]
+      }
+    ],
+    "totals": {
+      "subTotal": 169041,
+      "total": 149712,
+      "itemDiscounts": {
+        "value": -21749,
+        "details": [
+          { "key": "ALL", "value": -16521 },
+          { "key": "PRIME_USER", "value": -3456 }
+        ]
+      },
+      "shipping": null
+    },
+    "simulation": {
+      "CENCOPAY_BALANCE": {
+        "subTotal": 169041,
+        "total": 149712,
+        "discounts": -21749,
+        "discountDetails": {
+          "value": -21749,
+          "details": { "ALL": -18293, "PRIME_USER": -3456 }
+        }
+      }
+    }
+  }
+}

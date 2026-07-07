@@ -18,6 +18,7 @@ import {
   extractFrequentCardsFromHtml,
   parseFrequentCard,
 } from "./cencosudSession.js";
+import { parseCart } from "./cencosudCart.js";
 
 /**
  * Adaptador Cencosud (Jumbo + Santa Isabel).
@@ -499,12 +500,48 @@ export class CencosudAdapter implements StoreAdapter {
     };
   }
 
-  async addToCart(_items: CartItem[], _session: Session): Promise<Cart> {
-    throw new NotImplementedError(this.id, "addToCart", "fase 3");
+  /**
+   * Agrega/actualiza líneas en el carro del usuario (fase 3). Mapea a
+   * PATCH /cart/items. Requiere sesión con puente de carro: el navegador
+   * del usuario ejecuta la llamada autenticada; el servidor no ve el token.
+   */
+  async addToCart(items: CartItem[], session: Session): Promise<Cart> {
+    const bridge = this.requireCartBridge(session);
+    const branchId = this.requireBranch(session);
+    const payload = items.map((i) => ({
+      skuId: i.productId,
+      quantity: i.quantity,
+    }));
+    const raw = await bridge.patchItems(payload, branchId);
+    return parseCart(raw, this.id);
   }
 
-  async getCart(_session: Session): Promise<Cart> {
-    throw new NotImplementedError(this.id, "getCart", "fase 3");
+  /** Estado actual del carro (GET /cart). */
+  async getCart(session: Session): Promise<Cart> {
+    const bridge = this.requireCartBridge(session);
+    const branchId = this.requireBranch(session);
+    const raw = await bridge.readCart(branchId);
+    return parseCart(raw, this.id);
+  }
+
+  private requireCartBridge(session: Session) {
+    if (!session.cartBridge) {
+      throw new Error(
+        "El carro requiere una sesión con puente de carro (cartBridge): el " +
+          "navegador logueado del usuario ejecuta GET /cart y PATCH /cart/items " +
+          "con su token. El servidor MCP nunca ve credenciales. Ver docs §sesión."
+      );
+    }
+    return session.cartBridge;
+  }
+
+  private requireBranch(session: Session): string {
+    if (!session.branchId) {
+      throw new Error(
+        "El carro requiere branchId (sucursal de la sesión, ej. \"jumboclj512\")."
+      );
+    }
+    return session.branchId;
   }
 }
 

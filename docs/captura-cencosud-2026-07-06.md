@@ -153,6 +153,39 @@ Con sesión iniciada del usuario (sin que el MCP toque credenciales):
   `get_frequent_purchases` recibe las cards del navegador del usuario; el
   servidor nunca ve el token.
 
+## 4c. Carro (fase 3, capturado 2026-07-07)
+
+Endpoints del BFF `be-reg-groceries-bff-jumbo.ecomm.cencosud.com`:
+
+```
+GET   /cart?store={branchId}&simulationTotals=true   → estado del carro
+PATCH /cart/items                                     → agregar/actualizar
+```
+
+- **Headers** (autenticados): `token` / `Authorization`, `apiKey`, `x-consumer`,
+  `x-e-commerce`, `x-account`. El token viene del localStorage → operar desde
+  el navegador del usuario.
+- **Body de PATCH /cart/items** (verificado):
+  ```json
+  {"items":[{"skuId":"92628","quantity":3,"isUnitary":false,"giftable":false,
+    "itemQuantityLimit":18,"isUnitaryEligible":false,"sponsoredId":null,
+    "measurementUnitUn":"kg","unitMultiplierUn":1,"soldBy":"Jumbo"}],
+   "store":"jumboclj512"}
+  ```
+  quantity=0 (o el botón basurero en la UI) elimina la línea.
+- **Respuesta de GET /cart**: `{ items[], itemsQuantity, totals, simulation }`.
+  - `items[].prices`: `{listPrice, totalListPrice, price, totalPrice}`.
+  - `items[].promotions[]`: cada una con `userProperties` ("ALL" | "PRIME_USER")
+    y `applied`. El precio socio de la línea es la promo PRIME_USER.
+  - `totals`: `{subTotal, total, itemDiscounts:{value, details:[{key,value}]}, shipping}`.
+    Los `details` separan el descuento "ALL" del "PRIME_USER".
+  - `simulation`: totales por medio de pago (`DEBIT_CARD`, `CENCOSUD_CARD`,
+    `CENCOPAY_BALANCE`), cada uno con su `discountDetails.details` {ALL, PRIME_USER}.
+- El adaptador (`adapters/cencosudCart.ts`) normaliza a `Cart` exponiendo
+  `total`, `savings` y `primeSavings` (ahorro atribuible al beneficio socio).
+  Las tools `add_to_cart`/`get_cart` no ejecutan la llamada (el server no ve
+  el token): arman el request y normalizan el JSON que devuelve el navegador.
+
 ## 5. Implicancias para el adaptador
 
 1. Búsqueda: Constructor.io directo, sin navegador. `sellingPrice` como

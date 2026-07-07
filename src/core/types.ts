@@ -90,6 +90,25 @@ export interface Session {
    * cuando el puente prefiere entregar datos en vez de HTML crudo.
    */
   frequentCards?: FrequentCard[];
+  /**
+   * Puente de carro: el navegador del usuario ejecuta las llamadas
+   * autenticadas al BFF (GET /cart, PATCH /cart/items) con su token, y
+   * devuelve el JSON crudo del carro. El servidor MCP nunca ve el token.
+   */
+  cartBridge?: CartBridge;
+}
+
+/**
+ * Puente de carro hacia el navegador del usuario. `readCart` mapea a
+ * GET /cart; `patchItems` a PATCH /cart/items. Ambos devuelven el JSON
+ * crudo del carro para que el adaptador lo normalice.
+ */
+export interface CartBridge {
+  readCart(branchId: string): Promise<unknown>;
+  patchItems(
+    items: Array<{ skuId: string; quantity: number }>,
+    branchId: string
+  ): Promise<unknown>;
 }
 
 /**
@@ -116,15 +135,27 @@ export const CartItemSchema = z.object({
 });
 export type CartItem = z.infer<typeof CartItemSchema>;
 
+export const CartLineSchema = z.object({
+  product: ProductSchema,
+  quantity: z.number().int().positive(),
+  /** Total de la línea al precio vigente (price * quantity) en CLP */
+  lineTotal: z.number().int().nonnegative(),
+});
+export type CartLine = z.infer<typeof CartLineSchema>;
+
 export const CartSchema = z.object({
   store: StoreIdSchema,
-  items: z.array(
-    z.object({
-      product: ProductSchema,
-      quantity: z.number().int().positive(),
-    })
-  ),
+  items: z.array(CartLineSchema),
+  /** Cantidad total de unidades en el carro */
+  itemsQuantity: z.number().int().nonnegative(),
+  /** Suma sin descuentos (precio lista) en CLP */
+  subTotal: z.number().int().nonnegative(),
+  /** Total que paga el usuario, con sus descuentos aplicados (incl. Prime) */
   total: z.number().int().nonnegative(),
+  /** Ahorro total respecto al subtotal (subTotal - total) */
+  savings: z.number().int().nonnegative(),
+  /** Parte del ahorro atribuible al beneficio socio Prime, si aplica */
+  primeSavings: z.number().int().nonnegative().optional(),
 });
 export type Cart = z.infer<typeof CartSchema>;
 

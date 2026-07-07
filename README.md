@@ -5,13 +5,13 @@ chileno, empezando por Jumbo. El foco es profundidad en la cadena donde el
 usuario ya compra (precios club, beneficios por RUT, historial), no la
 comparación entre cadenas.
 
-**Estado: Fase 1 completa · Fase 2 (frecuentes + precio Prime) ✅ · Fase 3 parcial.**
+**Estado: Fases 1-3 en Jumbo ✅ (búsqueda, sesión, lista y carro).**
 
 | Fase | Alcance | Estado |
 |---|---|---|
 | 1 | Jumbo lectura pública (`search_products`, `get_product`, `get_offers`) | ✅ completa |
 | 2 | Jumbo con sesión: productos frecuentes, precio socio Prime | `get_frequent_purchases` + `get_member_price` ✅ · listas guardadas pendiente |
-| 3 | `build_list`, `suggest_swaps`, carro | `build_list` (prioriza frecuentes) + `suggest_swaps` ✅ · carro pendiente |
+| 3 | `build_list` (prioriza frecuentes), `suggest_swaps`, carro (`add_to_cart`, `get_cart`) | ✅ completa |
 | 4 | Santa Isabel (mismo adaptador Cencosud) | pendiente |
 | 5-7 | Unimarc, Tottus, Lider, `compare_stores` | pendiente |
 
@@ -47,6 +47,9 @@ O en desarrollo: `npm run inspector` (MCP Inspector) / `npm run dev`.
   precio vigente, normal y **precio socio Jumbo Prime**. Requiere sesión: el
   cliente entrega las cards del DOM (el servidor nunca ve credenciales).
 - `suggest_swaps` — reemplazos comparables con mejor precio por unidad.
+- `add_to_cart` / `get_cart` — deja la lista en el carro de Jumbo y muestra
+  el estado (total, ahorro y ahorro Prime). El servidor no ve credenciales:
+  arma el request que ejecuta el navegador logueado del usuario.
 - `adapter_status` — diagnóstico en vivo de las cadenas soportadas.
 - `search_products` — busca en Jumbo. Devuelve precios normalizados en CLP:
   `price` (vigente), `listPrice` (normal si hay oferta), `unitPrice`+`unit`
