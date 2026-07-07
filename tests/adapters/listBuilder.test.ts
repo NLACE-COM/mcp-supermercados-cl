@@ -139,6 +139,55 @@ describe("buildList con frecuentes (fase 2)", () => {
   });
 });
 
+describe("buildList con flags onlyOffers/onlyInStock", () => {
+  it("onlyOffers elige solo productos con descuento", async () => {
+    const adapter = fakeAdapter({
+      arroz: [
+        product({ id: "sinoferta", price: 1000, unitPrice: 1000, unit: "kg" }),
+        product({ id: "oferta", price: 900, listPrice: 1200, unitPrice: 900, unit: "kg" }),
+      ],
+    });
+    const result = await buildList(adapter, ["arroz"], { onlyOffers: true });
+    expect(result.items[0].chosen?.id).toBe("oferta");
+  });
+
+  it("onlyOffers sin ofertas deja el ítem sin match con nota", async () => {
+    const adapter = fakeAdapter({
+      arroz: [product({ id: "sinoferta", price: 1000, unitPrice: 1000, unit: "kg" })],
+    });
+    const result = await buildList(adapter, ["arroz"], { onlyOffers: true });
+    expect(result.items[0].chosen).toBeNull();
+    expect(result.items[0].note).toMatch(/oferta/i);
+  });
+
+  it("onlyInStock descarta productos sin stock", async () => {
+    const adapter = fakeAdapter({
+      pan: [
+        product({ id: "sinstock", price: 500, inStock: false }),
+        product({ id: "constock", price: 900, inStock: true }),
+      ],
+    });
+    const result = await buildList(adapter, ["pan"], { onlyInStock: true });
+    expect(result.items[0].chosen?.id).toBe("constock");
+  });
+
+  it("onlyOffers ignora un frecuente que no está en oferta", async () => {
+    const adapter = fakeAdapter({
+      arroz: [product({ id: "oferta", price: 900, listPrice: 1200, unitPrice: 900, unit: "kg" })],
+    });
+    const frequentProducts = [
+      product({ id: "freq", name: "arroz freq", price: 1000, unitPrice: 1000, unit: "kg" }),
+    ];
+    const result = await buildList(adapter, ["arroz"], {
+      onlyOffers: true,
+      frequentProducts,
+    });
+    // el frecuente no está en oferta => se cae al de oferta del catálogo
+    expect(result.items[0].chosen?.id).toBe("oferta");
+    expect(result.items[0].fromFrequent).toBeUndefined();
+  });
+});
+
 describe("suggestSwaps", () => {
   it("sugiere solo alternativas con mejor precio por unidad que el match actual", async () => {
     const adapter = fakeAdapter({

@@ -57,6 +57,14 @@ export const ProductSchema = z.object({
   /** Unidad base del unitPrice: "kg" | "lt" | "un" | ... */
   unit: z.string().optional(),
   offer: OfferSchema.optional(),
+  /**
+   * Ingredientes del producto (de la ficha). Base para juicios de
+   * "naturalidad" / "menos ingredientes" — el modelo razona sobre esta lista.
+   * Disponible en get_product de las cadenas que exponen ficha.
+   */
+  ingredients: z.array(z.string()).optional(),
+  /** Sellos/flags nutricionales de la ficha (ej. "alto en azúcares"). */
+  nutritionalFlags: z.array(z.string()).optional(),
   inStock: z.boolean(),
   imageUrl: z.string().url().optional(),
   url: z.string().url().optional(),

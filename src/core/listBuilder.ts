@@ -42,6 +42,15 @@ export interface ResolveOpts {
    * que la persona realmente compra). Se llenan con getFrequentPurchases.
    */
   frequentProducts?: Product[];
+  /** Solo considerar productos en oferta (con descuento respecto al normal). */
+  onlyOffers?: boolean;
+  /** Solo considerar productos con stock real (descarta sin stock). */
+  onlyInStock?: boolean;
+}
+
+/** ¿El producto está en oferta? (precio vigente < precio normal, o tiene offer). */
+function isOnOffer(p: Product): boolean {
+  return (p.listPrice !== undefined && p.listPrice > p.price) || p.offer !== undefined;
 }
 
 /**
@@ -110,20 +119,35 @@ export async function resolveItem(
   opts: ResolveOpts = {}
 ): Promise<ResolvedItem> {
   const candidates = await adapter.searchProducts(query, {
-    limit: opts.perItemLimit ?? 8,
+    // Con filtros pedimos más candidatos para no quedarnos cortos al filtrar.
+    limit: opts.onlyOffers || opts.onlyInStock ? 20 : (opts.perItemLimit ?? 8),
     branchId: opts.branchId,
   });
-  const ranked = rankCandidates(candidates);
+
+  // Filtros opcionales antes de rankear. onlyInStock ya lo cubre
+  // rankCandidates (descarta sin stock), pero lo dejamos explícito.
+  let filtered = candidates;
+  if (opts.onlyInStock) filtered = filtered.filter((p) => p.inStock);
+  if (opts.onlyOffers) filtered = filtered.filter(isOnOffer);
+
+  const ranked = rankCandidates(filtered);
 
   // Núcleo del producto: si el usuario ya compra algo que matchea, va
-  // primero, aunque el buscador lo rankee más abajo.
-  const frequentMatch = opts.frequentProducts
+  // primero, aunque el buscador lo rankee más abajo. Respeta onlyOffers.
+  let frequentMatch = opts.frequentProducts
     ? matchFrequent(query, opts.frequentProducts)
     : undefined;
+  if (frequentMatch && opts.onlyOffers && !isOnOffer(frequentMatch)) {
+    frequentMatch = undefined;
+  }
 
   const chosen = frequentMatch ?? ranked[0] ?? null;
   // Alternativas: el ranking por conveniencia, sin repetir al elegido.
   const alternatives = ranked.filter((p) => p.id !== chosen?.id).slice(0, 3);
+
+  const noResultNote = opts.onlyOffers
+    ? "Sin productos en oferta con stock para este ítem."
+    : "Sin resultados con stock para este ítem.";
 
   return {
     query,
@@ -131,9 +155,7 @@ export async function resolveItem(
     alternatives,
     saving: chosen?.listPrice ? chosen.listPrice - chosen.price : 0,
     ...(frequentMatch ? { fromFrequent: true } : {}),
-    ...(chosen === null
-      ? { note: "Sin resultados con stock para este ítem." }
-      : {}),
+    ...(chosen === null ? { note: noResultNote } : {}),
     ...(!frequentMatch && chosen && ranked.length > 1 && !chosen.unitPrice
       ? { note: "Elegido por precio absoluto (sin precio por unidad comparable)." }
       : {}),

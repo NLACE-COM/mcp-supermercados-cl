@@ -170,6 +170,8 @@ describe("CencosudAdapter · detalle de producto (PDP SSR)", () => {
     expect(parsed.unit).toBe("kg");
     expect(parsed.inStock).toBe(true);
     expect(parsed.name).toContain("Banquete");
+    // enriquecimiento: ingredientes de la ficha (para juicio de naturalidad)
+    expect(parsed.ingredients).toEqual(["arroz grano largo ancho 95% grano entero"]);
   });
 
   it("getProduct resuelve slug, path y URL completa", async () => {

@@ -411,6 +411,12 @@ export class CencosudAdapter implements StoreAdapter {
       ...(unitPrice !== undefined ? { unitPrice } : {}),
       ...(unit ? { unit } : {}),
       ...(cencosudDescription(data) ? { description: cencosudDescription(data) } : {}),
+      ...(cencosudIngredients(data).length > 0
+        ? { ingredients: cencosudIngredients(data) }
+        : {}),
+      ...(Array.isArray(data.nutritionalFlags) && data.nutritionalFlags.length > 0
+        ? { nutritionalFlags: data.nutritionalFlags.map(String) }
+        : {}),
       ...(offer ? { offer } : {}),
       inStock: item.stock === true,
       imageUrl: (item.images?.[0] as string | undefined) || undefined,
@@ -682,6 +688,23 @@ function cencosudDescription(data: any): string | undefined {
   // limpiar HTML y recortar
   const text = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   return text.length > 0 ? text.slice(0, 600) : undefined;
+}
+
+/**
+ * Ingredientes de la ficha. Cencosud los expone en `ingredients` top-level
+ * y/o en `specifications` con key "ingredients".
+ */
+function cencosudIngredients(data: any): string[] {
+  const top = Array.isArray(data?.ingredients) ? data.ingredients : [];
+  const spec = Array.isArray(data?.specifications)
+    ? (data.specifications.find(
+        (s: any) => String(s?.key).toLowerCase() === "ingredients"
+      )?.value ?? [])
+    : [];
+  const all = [...top, ...spec]
+    .filter((x) => typeof x === "string" && x.trim().length > 0)
+    .map((x) => x.trim());
+  return [...new Set(all)];
 }
 
 /** Búsqueda en profundidad sobre el árbol de categorías de Constructor. */

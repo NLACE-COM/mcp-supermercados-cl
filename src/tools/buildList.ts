@@ -32,6 +32,14 @@ export function registerBuildList(server: McpServer): void {
           .string()
           .optional()
           .describe("Código de sucursal para precios locales, ej. \"jumboclj512\"."),
+        onlyOffers: z
+          .boolean()
+          .default(false)
+          .describe("true = arma la lista solo con productos en oferta (con descuento)."),
+        onlyInStock: z
+          .boolean()
+          .default(false)
+          .describe("true = solo productos con stock real."),
         frequentCards: z
           .array(
             z.object({
@@ -51,7 +59,7 @@ export function registerBuildList(server: McpServer): void {
           ),
       },
     },
-    async ({ store, items, branchId, frequentCards }) => {
+    async ({ store, items, branchId, onlyOffers, onlyInStock, frequentCards }) => {
       try {
         const adapter = getAdapter(store);
         const session = frequentCards?.length
@@ -64,6 +72,8 @@ export function registerBuildList(server: McpServer): void {
         const result = await buildList(adapter, items, {
           branchId,
           frequentProducts,
+          onlyOffers,
+          onlyInStock,
         });
         return {
           content: [
