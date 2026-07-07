@@ -81,6 +81,10 @@ export interface CencosudBannerConfig {
 export const JUMBO_CONFIG: CencosudBannerConfig = {
   storeId: "jumbo",
   constructorHost: "pwcdauseo-zone.cnstrc.com",
+  // Clave PÚBLICA de Constructor.io (autocompletado del lado cliente): va
+  // embebida en el JS de www.jumbo.cl y es visible en DevTools de cualquier
+  // visitante. NO es un secreto: identifica el índice de búsqueda, no da
+  // acceso a cuentas ni permite escribir. Sin ella el buscador no responde.
   constructorKey: "key_JopvNXKS61kwGkBe",
   siteBaseUrl: "https://www.jumbo.cl",
   // Colecciones verificadas 2026-07-06: /jumbo-ofertas y /ofertas-prime.
@@ -107,6 +111,8 @@ export const JUMBO_CONFIG: CencosudBannerConfig = {
 export const SANTA_ISABEL_CONFIG: CencosudBannerConfig = {
   storeId: "santaisabel",
   constructorHost: "ac.cnstrc.com",
+  // Clave PÚBLICA de Constructor.io, igual que la de Jumbo: embebida en el
+  // frontend de www.santaisabel.cl, no es un secreto.
   constructorKey: "key_c73M3GMIWJ8AcNnd",
   siteBaseUrl: "https://www.santaisabel.cl",
   // Detalle vía BFF propio (verificado 2026-07-07): POST /catalog/pdp con

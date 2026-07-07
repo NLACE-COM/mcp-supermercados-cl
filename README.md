@@ -167,6 +167,21 @@ DOM o ejecuta las llamadas autenticadas, y el MCP solo normaliza el resultado.
 Ver [`src/adapters/session.ts`](src/adapters/session.ts) y
 [`docs/captura-cencosud-2026-07-06.md`](docs/captura-cencosud-2026-07-06.md).
 
+### ¿Y esas API keys que aparecen en el código?
+
+Verás claves como `key_JopvNXKS61kwGkBe` (Jumbo) o
+`be-reg-groceries-sisa-catalog-wdhhq5a2fken` (Santa Isabel) en los adaptadores.
+**No son secretos.** Son las claves **públicas del frontend** de Constructor.io
+y del BFF de catálogo: van embebidas en el JavaScript de jumbo.cl y
+santaisabel.cl, y son visibles en las DevTools de cualquier visitante. Solo
+identifican el índice de búsqueda del lado cliente — **no dan acceso a ninguna
+cuenta ni permiten escribir**. Sin ellas, el buscador no responde.
+
+Los datos que **sí** son sensibles (token de sesión, precio socio, carro) viven
+en tu navegador logueado y **nunca** están en este repositorio. Un escáner
+automático puede marcar estas claves públicas como "token expuesto"; es un
+falso positivo.
+
 ---
 
 ## 🧪 Desarrollo y tests
