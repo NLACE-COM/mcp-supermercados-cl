@@ -89,6 +89,10 @@ Lectura de catálogo:
   Santa Isabel: vía su BFF, sucursal por defecto o con `branchId`).
 - `get_offers` — ofertas vigentes de Jumbo, filtrables por categoría/sucursal;
   `primeOnly` para las exclusivas de socios.
+- `find_opportunities` — las mejores oportunidades del momento: productos con
+  mayor descuento y stock, ordenados por `discountPct`, con `saving` y
+  `memberSaving`. `excludeIds` para destacar solo lo que no tienes en el carro;
+  `minDiscountPct` para el umbral. Para recomendar ofertas que valga la pena aprovechar.
 
 Comparación (secundaria) y diagnóstico:
 

@@ -3,6 +3,7 @@ import { registerAdapterStatus } from "./tools/adapterStatus.js";
 import { registerBuildList } from "./tools/buildList.js";
 import { registerCartTools } from "./tools/cart.js";
 import { registerCompareStores } from "./tools/compareStores.js";
+import { registerFindOpportunities } from "./tools/findOpportunities.js";
 import { registerGetFrequentPurchases } from "./tools/getFrequentPurchases.js";
 import { registerGetSavedLists } from "./tools/getSavedLists.js";
 import { registerGetOffers } from "./tools/getOffers.js";
@@ -27,6 +28,8 @@ export function createServer(): McpServer {
   registerSearchProducts(server);
   registerGetProduct(server);
   registerGetOffers(server);
+  // Oportunidades (mayor descuento + stock) para recomendar
+  registerFindOpportunities(server);
   // Comparación entre cadenas (secundaria)
   registerCompareStores(server);
   // Diagnóstico
