@@ -36,7 +36,9 @@ beneficios por RUT del usuario (Jumbo primero), no comparación entre cadenas.
 
 - Precios SIEMPRE en CLP enteros. `price` = vigente público, `listPrice` = normal si hay descuento, `memberPrice` = socio (Prime/club) separado. No mezclar.
 - `branchId` = sucursal dentro de la cadena (ej. `jumboclj512`); `store`/`StoreId` = la cadena (`jumbo`, `santaisabel`, ...).
-- Todo HTTP pasa por `src/http/client.ts` (rate limit 1 req/s por host + jitter, reintentos, UA realista). No usar `fetch` directo en adaptadores.
+- Todo HTTP pasa por `src/http/client.ts`. Rate limit por host diferenciado: hosts de API (Constructor.io, BFF Cencosud/Unimarc/Santa Isabel) a ~350 ms (`fastHostSuffixes`), sitios SSR (www.*, super.lider.cl) a ~1 s. Fallar rápido: 1 reintento, timeout 8 s. Ajustable por entorno: `SUPERMERCADOS_MIN_DELAY_MS`, `SUPERMERCADOS_FAST_DELAY_MS`, `SUPERMERCADOS_TIMEOUT_MS`, `SUPERMERCADOS_MAX_RETRIES`. No usar `fetch` directo en adaptadores.
+- Feedback: `build_list` y `compare_stores` emiten `notifications/progress` MCP (ver `src/tools/progress.ts`) si el cliente manda `progressToken`. `compare_stores` corta cada cadena a 25 s (`STORE_BUDGET_MS`) y devuelve parcial en vez de bloquear a las demás.
+- La versión del server MCP sale de `package.json` (`src/server.ts`), no hardcodeada.
 - Adaptadores aislados por cadena; un cambio de sitio rompe un adaptador, no todo. Tests de contrato con fixtures reales en `tests/fixtures/` (regrabar cuando cambie el formato, anotando fecha).
 - La sesión es parámetro de primera clase (`Session`), el servidor MCP nunca ve credenciales.
 - Comentarios y strings de cara al usuario en español; identificadores en inglés.

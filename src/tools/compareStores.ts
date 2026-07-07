@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { compareStores } from "../core/compare.js";
 import { availableStores } from "../core/registry.js";
+import { progressNotifier } from "./progress.js";
 
 /**
  * compare_stores (fase 7): capacidad secundaria del plan. Estima el total
@@ -35,9 +36,14 @@ export function registerCompareStores(server: McpServer): void {
           .describe("Sucursal para las cadenas Cencosud (ej. \"jumboclj512\")."),
       },
     },
-    async ({ items, stores, branchId }) => {
+    async ({ items, stores, branchId }, extra) => {
       const target = stores && stores.length > 0 ? stores : availableStores();
-      const result = await compareStores(items, target, branchId);
+      const result = await compareStores(
+        items,
+        target,
+        branchId,
+        progressNotifier(extra)
+      );
       return {
         content: [
           {

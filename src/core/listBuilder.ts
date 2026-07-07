@@ -162,17 +162,27 @@ export async function resolveItem(
   };
 }
 
+/** Callback de progreso (para notificar al cliente MCP ítem a ítem). */
+export type BuildProgressFn = (
+  done: number,
+  total: number,
+  message: string
+) => void | Promise<void>;
+
 export async function buildList(
   adapter: StoreAdapter,
   queries: string[],
-  opts: ResolveOpts = {}
+  opts: ResolveOpts = {},
+  onProgress?: BuildProgressFn
 ): Promise<BuildListResult> {
   const items: ResolvedItem[] = [];
   // Secuencial a propósito: el rate limit por host ya serializa, y así la
   // lista mantiene ritmo humano.
-  for (const query of queries) {
+  for (const [i, query] of queries.entries()) {
+    await onProgress?.(i, queries.length, `Buscando "${query}" (${i + 1}/${queries.length})…`);
     items.push(await resolveItem(adapter, query, opts));
   }
+  await onProgress?.(queries.length, queries.length, "Ítems resueltos; calculando totales…");
   const total = items.reduce((sum, i) => sum + (i.chosen?.price ?? 0), 0);
   const totalSaving = items.reduce((sum, i) => sum + i.saving, 0);
   return { items, total, totalSaving };

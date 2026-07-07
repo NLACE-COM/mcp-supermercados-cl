@@ -4,6 +4,7 @@ import { dataSession } from "../adapters/session.js";
 import { buildList, loadFrequent } from "../core/listBuilder.js";
 import { getAdapter } from "../core/registry.js";
 import type { FrequentCard } from "../core/types.js";
+import { progressNotifier } from "./progress.js";
 
 export function registerBuildList(server: McpServer): void {
   server.registerTool(
@@ -59,7 +60,11 @@ export function registerBuildList(server: McpServer): void {
           ),
       },
     },
-    async ({ store, items, branchId, onlyOffers, onlyInStock, frequentCards }) => {
+    async (
+      { store, items, branchId, onlyOffers, onlyInStock, frequentCards },
+      extra
+    ) => {
+      const notify = progressNotifier(extra);
       try {
         const adapter = getAdapter(store);
         const session = frequentCards?.length
@@ -69,12 +74,12 @@ export function registerBuildList(server: McpServer): void {
             })
           : undefined;
         const frequentProducts = await loadFrequent(adapter, session);
-        const result = await buildList(adapter, items, {
-          branchId,
-          frequentProducts,
-          onlyOffers,
-          onlyInStock,
-        });
+        const result = await buildList(
+          adapter,
+          items,
+          { branchId, frequentProducts, onlyOffers, onlyInStock },
+          notify
+        );
         return {
           content: [
             {

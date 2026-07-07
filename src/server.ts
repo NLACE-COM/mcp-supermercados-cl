@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAdapterStatus } from "./tools/adapterStatus.js";
 import { registerBuildList } from "./tools/buildList.js";
@@ -11,10 +12,15 @@ import { registerGetProduct } from "./tools/getProduct.js";
 import { registerSearchProducts } from "./tools/searchProducts.js";
 import { registerSuggestSwaps } from "./tools/suggestSwaps.js";
 
+// La versión sale de package.json para que no vuelva a quedar desfasada.
+const { version } = createRequire(import.meta.url)("../package.json") as {
+  version: string;
+};
+
 export function createServer(): McpServer {
   const server = new McpServer({
     name: "mcp-supermercados-cl",
-    version: "1.0.0",
+    version,
   });
 
   // Núcleo: armar la mejor lista con la sesión del usuario

@@ -33,6 +33,20 @@ export interface CompareResult {
   cheapest?: StoreId;
 }
 
+/**
+ * Presupuesto de tiempo por cadena: una cadena caída o bloqueada (timeouts,
+ * reintentos) no debe retrasar el resultado de las demás. Al agotarse, se
+ * devuelve lo resuelto hasta ahí con `error` explicando el parcial.
+ */
+const STORE_BUDGET_MS = 25_000;
+
+/** Callback de progreso (para notificar al cliente MCP mientras se compara). */
+export type CompareProgressFn = (
+  done: number,
+  total: number,
+  message: string
+) => void | Promise<void>;
+
 async function compareOneStore(
   store: StoreId,
   items: string[],
@@ -40,40 +54,72 @@ async function compareOneStore(
 ): Promise<StoreComparison> {
   const adapter = getAdapter(store);
   const results: StoreItemResult[] = [];
-  try {
-    for (const query of items) {
-      const candidates = await adapter.searchProducts(query, {
-        limit: 8,
-        branchId,
-      });
-      const best = rankCandidates(candidates)[0] ?? null;
-      results.push({ query, product: best });
-    }
-  } catch (err) {
-    return {
-      store,
-      items: results,
-      matched: results.filter((r) => r.product).length,
-      total: results.reduce((s, r) => s + (r.product?.price ?? 0), 0),
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
-  return {
+  const summary = (error?: string): StoreComparison => ({
     store,
-    items: results,
+    items: [...results],
     matched: results.filter((r) => r.product).length,
     total: results.reduce((s, r) => s + (r.product?.price ?? 0), 0),
-  };
+    ...(error ? { error } : {}),
+  });
+
+  // `expired` corta el loop en el siguiente ítem; la carrera cubre además
+  // el caso de una request colgada a mitad de ítem.
+  let expired = false;
+  const run = (async () => {
+    try {
+      for (const query of items) {
+        if (expired) break;
+        const candidates = await adapter.searchProducts(query, {
+          limit: 8,
+          branchId,
+        });
+        results.push({ query, product: rankCandidates(candidates)[0] ?? null });
+      }
+      return summary();
+    } catch (err) {
+      return summary(err instanceof Error ? err.message : String(err));
+    }
+  })();
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<StoreComparison>((resolve) => {
+    timer = setTimeout(() => {
+      expired = true;
+      resolve(
+        summary(
+          `No alcanzó a resolver todos los ítems en ${STORE_BUDGET_MS / 1000}s; resultado parcial.`
+        )
+      );
+    }, STORE_BUDGET_MS);
+  });
+
+  try {
+    return await Promise.race([run, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function compareStores(
   items: string[],
   stores: StoreId[],
-  branchId?: string
+  branchId?: string,
+  onProgress?: CompareProgressFn
 ): Promise<CompareResult> {
   // En paralelo por cadena; cada una serializa internamente por rate limit.
+  let done = 0;
   const comparisons = await Promise.all(
-    stores.map((s) => compareOneStore(s, items, branchId))
+    stores.map((s) =>
+      compareOneStore(s, items, branchId).then(async (c) => {
+        done += 1;
+        await onProgress?.(
+          done,
+          stores.length,
+          `${s}: ${c.matched}/${items.length} ítems${c.error ? " (con error)" : ""} — ${done}/${stores.length} cadenas listas`
+        );
+        return c;
+      })
+    )
   );
 
   // Cadena más barata entre las que encontraron TODOS los ítems.
