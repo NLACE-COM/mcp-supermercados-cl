@@ -38,8 +38,16 @@ GET https://pwcdauseo-zone.cnstrc.com/search/{query}
 | jumboCO | `key_MiR4ElROwyAwJxlr` | — | — |
 | wongPE / metroPE | `key_FxY3WjZjKWp9ZgIy` / `key_Yz1sWCvhXgmmrPpo` | — | — |
 
-⚠️ La key de Santa Isabel **no responde** en `pwcdauseo-zone.cnstrc.com`
-(usa otro host de zona). Capturar el host desde santaisabel.cl en fase 4.
+⚠️ La key de Santa Isabel **no responde** en `pwcdauseo-zone.cnstrc.com`.
+**Actualización 2026-07-07**: responde en el host estándar `ac.cnstrc.com`
+con la misma forma de payload (SkuData, sellingPrice, etc.). Diferencias
+encontradas para fase 4:
+- Las URLs de producto apuntan a `www.sisa.cl` (redirigen a santaisabel.cl).
+- La respuesta de búsqueda probada no trajo `variations[]` por tienda.
+- El PDP de santaisabel.cl NO usa el estado React Query de Jumbo: embebe
+  `window.__renderData` (payload VTEX con `items[].sellers[].commertialOffer`)
+  y los precios vienen en **0** sin tienda seleccionada. getProduct para SI
+  necesita parser propio + resolver la selección de tienda.
 
 ### Campos relevantes de cada resultado
 

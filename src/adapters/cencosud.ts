@@ -53,14 +53,18 @@ export const JUMBO_CONFIG: CencosudBannerConfig = {
 };
 
 /**
- * Santa Isabel comparte plataforma. Su key prod es key_c73M3GMIWJ8AcNnd
- * (extraída de cnstrc.com/js/cust/cencosud_0BmS-e.js, banner sisaCL), pero
- * usa OTRO host de zona: la key no responde en pwcdauseo-zone. Capturar el
- * host correcto desde santaisabel.cl en la fase 4 antes de habilitarla.
+ * Santa Isabel comparte el backend de búsqueda. Verificado 2026-07-07:
+ * su key responde en el host ESTÁNDAR de Constructor (ac.cnstrc.com) con
+ * la misma forma de payload (SkuData incluido). Pendiente para habilitarla
+ * en fase 4: su PDP no usa el estado React Query de Jumbo sino
+ * `window.__renderData` (VTEX-style) con precios en 0 hasta seleccionar
+ * tienda => getProduct/memberPrice requieren su propio parser + manejo de
+ * tienda. Las URLs de producto que devuelve Constructor apuntan a
+ * www.sisa.cl (redirigen a santaisabel.cl).
  */
 export const SANTA_ISABEL_CONFIG: CencosudBannerConfig = {
   storeId: "santaisabel",
-  constructorHost: "PENDIENTE-fase-4.cnstrc.com",
+  constructorHost: "ac.cnstrc.com",
   constructorKey: "key_c73M3GMIWJ8AcNnd",
   siteBaseUrl: "https://www.santaisabel.cl",
 };
