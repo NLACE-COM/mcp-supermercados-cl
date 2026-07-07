@@ -25,7 +25,11 @@ beneficios por RUT del usuario (Jumbo primero), no comparación entre cadenas.
   - HttpClient ganó `postJson` (Unimarc). Helpers `parseClpString`/`parseUnitPriceString`/`normalizeUnit` en normalize.ts.
   - Unimarc/Tottus/Lider requieren IP residencial (datacenter bloquea); documentado en `docs/captura-otras-cadenas-2026-07-07.md`. Fixtures reales en tests/fixtures.
   - Publicación: LICENSE MIT, README de lanzamiento con aviso legal. Server v1.0.0, 10 tools, 72 tests de contrato.
-- Pendiente opcional (mejoras, no del plan base): listas guardadas (fase 2), profundidad de sesión/carro en las cadenas no-Jumbo.
+- **Tres mejoras completas** (2026-07-07):
+  1. Listas guardadas de Jumbo: `get_saved_lists` + `adapters/cencosudLists.ts`. Endpoints `/lists`, `/lists/{scope}/{idList}`. Items con misma forma que carro (precio socio en promotions PRIME_USER). Fixture `jumbo-list-2026-07-07.json`.
+  2. Profundidad no-Jumbo: Santa Isabel ganó `get_product` con precio socio; su carro usa el `addToCart`/`getCart` genérico del CencosudAdapter (mismo BFF). Unimarc/Tottus/Lider: carro con login propio, fase futura.
+  3. Detalle de Santa Isabel: `pdpStyle:"bff-pdp"` → `POST bff.santaisabel.cl/catalog/pdp` con `{slug, store}` + headers (apiKey pública `be-reg-groceries-sisa-catalog-wdhhq5a2fken`, x-client-version 2.3.17). Misma forma de item que Jumbo; `mapPdpData` compartido. `store` = sucursal (default "pedrofontova", override con branchId). Fixture `santaisabel-pdp.json`.
+- 12 tools, 80 tests de contrato. Detalle en docs/captura-cencosud-2026-07-06.md §4d.
 - **Fase 4 (Santa Isabel) — búsqueda habilitada** (2026-07-07): registrada con `SANTA_ISABEL_CONFIG` (host `ac.cnstrc.com`, key `key_c73M3GMIWJ8AcNnd`). `search_products`, `build_list` y `suggest_swaps` funcionan para `santaisabel` con precios y ofertas reales. El `CencosudBannerConfig` ahora lleva capacidades por banner (`offersCollectionId`, `pdpStyle`): `get_product` y `get_offers` de Santa Isabel lanzan error claro (su PDP `window.__renderData`/VTEX y ofertas requieren comuna seleccionada; precios en 0 sin ella). URLs de producto en www.sisa.cl. Fixture: `tests/fixtures/santaisabel-search-arroz.json`. Pendiente para profundidad completa en SI: parser VTEX con selección de comuna → precio socio y carro.
 
 ## Convenciones

@@ -96,6 +96,12 @@ export interface Session {
    * devuelve el JSON crudo del carro. El servidor MCP nunca ve el token.
    */
   cartBridge?: CartBridge;
+  /**
+   * JSON crudo de las listas guardadas que el navegador ya obtuvo
+   * (GET /lists y GET /lists/{scope}/{idList}). Camino consistente con
+   * frequentCards: el servidor no ve el token, solo normaliza.
+   */
+  savedListsRaw?: unknown;
 }
 
 /**

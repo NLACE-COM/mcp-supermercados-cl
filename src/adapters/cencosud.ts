@@ -19,6 +19,7 @@ import {
   parseFrequentCard,
 } from "./cencosudSession.js";
 import { parseCart } from "./cencosudCart.js";
+import { parseShoppingLists } from "./cencosudLists.js";
 
 /**
  * Adaptador Cencosud (Jumbo + Santa Isabel).
@@ -57,12 +58,18 @@ export interface CencosudBannerConfig {
   offersCollectionId?: string;
   primeOffersCollectionId?: string;
   /**
-   * Estilo de PDP para getProduct/memberPrice. "react-query": estado
-   * deshidratado (Jumbo, precio Prime sin login). "requires-locale": la PDP
-   * necesita comuna/tienda seleccionada y no sirve precios directos (Santa
-   * Isabel); getProduct no está soportado por HTTP directo.
+   * Estilo de PDP para getProduct/memberPrice.
+   * - "react-query": estado deshidratado del HTML SSR (Jumbo).
+   * - "bff-pdp": POST a un BFF con {slug, store} que devuelve el producto
+   *   directo (Santa Isabel). Requiere `bffPdpUrl` y `defaultStore`.
    */
-  pdpStyle: "react-query" | "requires-locale";
+  pdpStyle: "react-query" | "bff-pdp";
+  /** URL del BFF de detalle (pdpStyle "bff-pdp"). */
+  bffPdpUrl?: string;
+  /** Sucursal por defecto para el detalle si no se pasa branchId. */
+  defaultStore?: string;
+  /** Headers que exige el BFF de detalle (apiKey pública, versión de cliente). */
+  bffHeaders?: Record<string, string>;
 }
 
 export const JUMBO_CONFIG: CencosudBannerConfig = {
@@ -96,7 +103,18 @@ export const SANTA_ISABEL_CONFIG: CencosudBannerConfig = {
   constructorHost: "ac.cnstrc.com",
   constructorKey: "key_c73M3GMIWJ8AcNnd",
   siteBaseUrl: "https://www.santaisabel.cl",
-  pdpStyle: "requires-locale",
+  // Detalle vía BFF propio (verificado 2026-07-07): POST /catalog/pdp con
+  // {slug, store}. Misma forma de item que Jumbo (price/listPrice/promotions).
+  pdpStyle: "bff-pdp",
+  bffPdpUrl: "https://bff.santaisabel.cl/catalog/pdp",
+  defaultStore: "pedrofontova",
+  // apiKey pública embebida en el frontend de santaisabel.cl (verificada
+  // 2026-07-07). x-trace-id es un uuid cualquiera por request.
+  bffHeaders: {
+    apiKey: "be-reg-groceries-sisa-catalog-wdhhq5a2fken",
+    "x-client-platform": "web",
+    "x-client-version": "2.3.17",
+  },
 };
 
 /** Versión del cliente ciojs observada en producción (param `c`). */
@@ -277,22 +295,41 @@ export class CencosudAdapter implements StoreAdapter {
   // Detalle de producto (SSR de la PDP, incluye precio Prime)
   // ------------------------------------------------------------------
 
-  async getProduct(idOrUrl: string, _session?: Session): Promise<Product | null> {
-    if (this.config.pdpStyle === "requires-locale") {
-      throw new Error(
-        `get_product no está disponible para ${this.id}: su ficha requiere ` +
-          `seleccionar comuna/tienda y no expone precios por HTTP directo. ` +
-          `Usar search_products, que sí trae precios. Ver docs §Santa Isabel.`
-      );
-    }
+  async getProduct(idOrUrl: string, session?: Session): Promise<Product | null> {
     const url = this.resolveProductUrl(idOrUrl);
     if (!url) return null;
+
+    if (this.config.pdpStyle === "bff-pdp") {
+      const slug = this.slugFromUrl(url);
+      const store = session?.branchId ?? this.config.defaultStore ?? "";
+      return this.productCache.getOrFetch(`pdp:${slug}:${store}`, async () => {
+        const data = await this.http.postJson<any>(
+          this.config.bffPdpUrl!,
+          { slug, store },
+          {
+            headers: {
+              ...this.config.bffHeaders,
+              "x-trace-id": randomUUID(),
+            },
+          }
+        );
+        return this.mapPdpData(data, url);
+      });
+    }
+
     return this.productCache.getOrFetch(`pdp:${url}`, async () => {
       const html = await this.http.getText(url);
       const state = extractDehydratedState(html);
       if (!state) return null;
       return this.mapPdpState(state, url);
     });
+  }
+
+  /** Slug pelado desde una URL/path de producto (…/{slug}/p). */
+  private slugFromUrl(url: string): string {
+    const path = url.replace(/^https?:\/\/[^/]+/, "");
+    const m = path.match(/\/([^/]+)\/p\/?$/);
+    return m ? m[1] : path.replace(/^\//, "").replace(/\/p\/?$/, "");
   }
 
   /** Acepta URL completa, path (/slug/p) o slug pelado. */
@@ -315,6 +352,17 @@ export class CencosudAdapter implements StoreAdapter {
       (q) => Array.isArray(q?.queryKey) && q.queryKey[0] === "pdp"
     );
     const data = pdpQuery?.state?.data;
+    if (!data) return null;
+    return this.mapPdpData(data, url);
+  }
+
+  /**
+   * Mapea el objeto de producto de la PDP `{productId, brand, items[]}` a
+   * Product. Lo comparten el estado deshidratado de Jumbo (react-query) y la
+   * respuesta directa del BFF de Santa Isabel (POST /catalog/pdp). Público
+   * para el test de contrato.
+   */
+  mapPdpData(data: any, url: string): Product | null {
     const item = data?.items?.[0];
     if (!data || !item) return null;
 
@@ -508,8 +556,30 @@ export class CencosudAdapter implements StoreAdapter {
     );
   }
 
-  async getSavedLists(_session: Session): Promise<ShoppingList[]> {
-    throw new NotImplementedError(this.id, "getSavedLists", "fase 2 (siguiente paso)");
+  /**
+   * Listas guardadas del usuario. Requiere sesión: el navegador entrega el
+   * JSON crudo de GET /lists (y el detalle con items) en `savedListsRaw`,
+   * porque el token vive en su localStorage. El servidor solo normaliza.
+   */
+  async getSavedLists(session: Session): Promise<ShoppingList[]> {
+    if (session.savedListsRaw !== undefined) {
+      return parseShoppingLists(session.savedListsRaw, this.id);
+    }
+    if (session.fetchAuthedHtml) {
+      // Fallback: pedir el JSON de listas por el puente HTML si el cliente
+      // lo enruta (algunos puentes devuelven texto JSON).
+      const text = await session.fetchAuthedHtml("/lists?store=" + (session.branchId ?? ""));
+      try {
+        return parseShoppingLists(JSON.parse(text), this.id);
+      } catch {
+        return [];
+      }
+    }
+    throw new Error(
+      "getSavedLists requiere una sesión con las listas ya obtenidas por el " +
+        "navegador (savedListsRaw). El token de Jumbo vive en localStorage; " +
+        "ver docs §sesión."
+    );
   }
 
   /**

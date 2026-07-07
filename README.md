@@ -24,13 +24,18 @@ Cinco cadenas, ciclo completo en Jumbo. Todas las fases del plan implementadas.
 
 ### Cobertura por cadena
 
-| Cadena | Plataforma | Búsqueda | Precio socio | Sesión / carro |
-|---|---|---|---|---|
-| Jumbo | Cencosud (Constructor.io) | ✅ | ✅ Prime | ✅ frecuentes + carro |
-| Santa Isabel | Cencosud (Constructor.io) | ✅ | — (requiere comuna) | — |
-| Unimarc | VTEX (BFF propio) | ✅ | ✅ Club Unimarc | — |
-| Tottus | Falabella (Next.js SSR) | ✅ | — | — |
-| Lider | Walmart Glass (SSR) | ✅ | ✅ cuando aplica | — |
+| Cadena | Plataforma | Búsqueda | Precio socio | Detalle | Sesión / carro |
+|---|---|---|---|---|---|
+| Jumbo | Cencosud (Constructor.io) | ✅ | ✅ Prime | ✅ | ✅ frecuentes, listas, carro |
+| Santa Isabel | Cencosud (Constructor.io) | ✅ | ✅ (detalle BFF) | ✅ | carro Cencosud¹ |
+| Unimarc | VTEX (BFF propio) | ✅ | ✅ Club Unimarc | — | — |
+| Tottus | Falabella (Next.js SSR) | ✅ | — | — | — |
+| Lider | Walmart Glass (SSR) | ✅ | ✅ cuando aplica | — | — |
+
+¹ El carro de Santa Isabel usa el mismo BFF Cencosud que Jumbo (`addToCart`/
+`getCart` son genéricos vía el puente de sesión); se activa con la sesión del
+usuario en santaisabel.cl. El carro de Unimarc/Tottus/Lider (plataformas
+distintas, login propio) queda como trabajo futuro.
 
 Unimarc, Tottus y Lider requieren **IP residencial** (la máquina del usuario);
 desde datacenter bloquean. El MCP corre local, así que en producción funcionan.
@@ -69,6 +74,8 @@ Núcleo — armar la mejor lista con la sesión del usuario:
 - `get_frequent_purchases` — tus productos habituales, con precio vigente,
   normal y **precio socio Jumbo Prime**. Requiere sesión: el cliente entrega
   las cards del DOM (el servidor nunca ve credenciales).
+- `get_saved_lists` — tus listas de compra guardadas en Jumbo, normalizadas a
+  `{ id, name, items[] }`. Requiere sesión (el cliente entrega el JSON).
 - `add_to_cart` / `get_cart` — deja la lista en el carro de Jumbo y muestra el
   estado (total, ahorro y ahorro Prime). El servidor no ve credenciales: arma
   el request que ejecuta el navegador logueado del usuario.
@@ -78,7 +85,8 @@ Lectura de catálogo:
 - `search_products` — busca en cualquier cadena. Precios en CLP: `price`
   (vigente), `listPrice` (normal si hay oferta), `memberPrice` (socio),
   `unitPrice`+`unit` (por kg/lt/un), stock, y con `branchId` precios de sucursal.
-- `get_product` — detalle por URL/slug (Jumbo: incluye precio Prime y EAN).
+- `get_product` — detalle por URL/slug con precio socio y EAN (Jumbo: Prime;
+  Santa Isabel: vía su BFF, sucursal por defecto o con `branchId`).
 - `get_offers` — ofertas vigentes de Jumbo, filtrables por categoría/sucursal;
   `primeOnly` para las exclusivas de socios.
 

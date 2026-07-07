@@ -1,0 +1,29 @@
+{
+  "_comment": "Detalle de producto de Santa Isabel capturado 2026-07-07. POST https://bff.santaisabel.cl/catalog/pdp con body {slug, store}, donde store es la sucursal (ej. 'pedrofontova'). Respuesta con MISMA estructura que la PDP de Jumbo: items[] con {skuId, price, listPrice, ppumPrice, ppumMeasurementUnit, ean, stock, promotions[]}. El precio socio (Clientes Santa Isabel) sale de promotions[] con userProperties, igual que Jumbo Prime.",
+  "endpoint": "POST https://bff.santaisabel.cl/catalog/pdp",
+  "requestBody": { "slug": "pechuga-de-pollo-entera-super-pollo-granel", "store": "pedrofontova" },
+  "response": {
+    "productId": "1970",
+    "slug": "pechuga-de-pollo-entera-super-pollo-granel",
+    "brand": "Super Pollo",
+    "reference": "24082518",
+    "items": [
+      {
+        "skuId": "1975",
+        "name": "Pechuga Entera de Pollo a Granel",
+        "measurementUnit": "kg",
+        "unitMultiplier": 1,
+        "measurementUnitUn": "kg",
+        "unitMultiplierUn": 1,
+        "price": 4671,
+        "listPrice": 4671,
+        "ppumPrice": 5190,
+        "ppumListPrice": 5190,
+        "ppumMeasurementUnit": "kg",
+        "ean": "24082518",
+        "stock": true,
+        "promotions": []
+      }
+    ]
+  }
+}

@@ -153,6 +153,38 @@ Con sesión iniciada del usuario (sin que el MCP toque credenciales):
   `get_frequent_purchases` recibe las cards del navegador del usuario; el
   servidor nunca ve el token.
 
+## 4d. Santa Isabel: detalle y listas (mejoras, 2026-07-07)
+
+**Detalle** (equivalente a la PDP de Jumbo, distinto transporte):
+```
+POST https://bff.santaisabel.cl/catalog/pdp
+apiKey: be-reg-groceries-sisa-catalog-wdhhq5a2fken   (pública, del frontend)
+x-client-platform: web
+x-client-version: 2.3.17
+x-trace-id: <uuid por request>
+body: {"slug":"{slug}","store":"{sucursal}"}   (ej. store "pedrofontova")
+```
+La respuesta trae `items[]` con la **misma forma que Jumbo** (`price`,
+`listPrice`, `ppumPrice`, `ppumMeasurementUnit`, `ean`, `stock`,
+`promotions[]` con `userProperties` para el precio socio). Acepta el slug con
+id numérico de las URLs de Constructor (ej.
+`leche-entera-surlat-b-a-1l-1991554`). `store` = sucursal (branchId); sin ella
+usa la del default. Por eso el `CencosudBannerConfig` gana `pdpStyle:"bff-pdp"`
+y el adaptador comparte `mapPdpData` entre Jumbo (estado deshidratado) y SI.
+
+**Listas guardadas de Jumbo** (fase 2):
+```
+GET /lists?store={branchId}                        (listas del usuario)
+GET /lists/inspiration-list?perPage=5&page=1&...   (sugeridas)
+GET /lists/{scope}/{idList}?store={branchId}       (detalle con items)
+```
+Cada lista: `{idList, name, description, items[], isFavorite}`. Cada item:
+`{idItem, name, price, listPrice, quantity, promotions[], stock,
+measurementUnit, unitMultiplier}` — el precio socio en `promotions[]` con
+userProperties PRIME_USER, igual que carro/PDP. Requiere sesión (token en
+localStorage): el navegador entrega el JSON, el server lo normaliza
+(`adapters/cencosudLists.ts`, tool `get_saved_lists`).
+
 ## 4c. Carro (fase 3, capturado 2026-07-07)
 
 Endpoints del BFF `be-reg-groceries-bff-jumbo.ecomm.cencosud.com`:

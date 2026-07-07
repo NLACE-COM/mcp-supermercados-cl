@@ -4,6 +4,7 @@ import { registerBuildList } from "./tools/buildList.js";
 import { registerCartTools } from "./tools/cart.js";
 import { registerCompareStores } from "./tools/compareStores.js";
 import { registerGetFrequentPurchases } from "./tools/getFrequentPurchases.js";
+import { registerGetSavedLists } from "./tools/getSavedLists.js";
 import { registerGetOffers } from "./tools/getOffers.js";
 import { registerGetProduct } from "./tools/getProduct.js";
 import { registerSearchProducts } from "./tools/searchProducts.js";
@@ -19,6 +20,7 @@ export function createServer(): McpServer {
   registerBuildList(server);
   registerSuggestSwaps(server);
   registerGetFrequentPurchases(server);
+  registerGetSavedLists(server);
   // Carro
   registerCartTools(server);
   // Lectura de catálogo

@@ -66,16 +66,73 @@ describe("Santa Isabel · búsqueda (reusa Cencosud)", () => {
   });
 });
 
-describe("Santa Isabel · capacidades no soportadas fallan con mensaje claro", () => {
-  const adapter = new CencosudAdapter(SANTA_ISABEL_CONFIG);
+describe("Santa Isabel · detalle vía BFF (POST /catalog/pdp)", () => {
+  const pdpFixture = JSON.parse(
+    readFileSync(join(fixturesDir, "santaisabel-pdp.json"), "utf-8")
+  );
 
-  it("getProduct explica que requiere comuna y sugiere search_products", async () => {
-    await expect(adapter.getProduct("cualquier-slug")).rejects.toThrow(
-      /comuna|search_products/
+  it("getProduct hace POST al BFF con slug+store y headers, y mapea", async () => {
+    let seenUrl = "";
+    let seenBody: any = null;
+    let seenHeaders: any = null;
+    const http: HttpFetcher = {
+      async postJson<T>(url: string, body: unknown, opts?: any): Promise<T> {
+        seenUrl = url;
+        seenBody = body;
+        seenHeaders = opts?.headers;
+        return pdpFixture.response as T;
+      },
+      async getJson<T>(): Promise<T> {
+        throw new Error("no");
+      },
+      async getText(): Promise<string> {
+        throw new Error("no");
+      },
+    };
+    const adapter = new CencosudAdapter(SANTA_ISABEL_CONFIG, http);
+    const p = await adapter.getProduct(
+      "https://www.sisa.cl/pechuga-de-pollo-entera-super-pollo-granel/p"
     );
+
+    expect(seenUrl).toBe("https://bff.santaisabel.cl/catalog/pdp");
+    expect(seenBody).toMatchObject({
+      slug: "pechuga-de-pollo-entera-super-pollo-granel",
+      store: "pedrofontova",
+    });
+    expect(seenHeaders.apiKey).toBe("be-reg-groceries-sisa-catalog-wdhhq5a2fken");
+    expect(seenHeaders["x-trace-id"]).toBeTruthy();
+
+    ProductSchema.parse(p);
+    expect(p!.store).toBe("santaisabel");
+    expect(p!.price).toBe(4671);
+    expect(p!.unit).toBe("kg");
+    expect(p!.ean).toBe("24082518");
+  });
+
+  it("branchId de la sesión sobreescribe la sucursal por defecto", async () => {
+    let seenBody: any = null;
+    const http: HttpFetcher = {
+      async postJson<T>(_url: string, body: unknown): Promise<T> {
+        seenBody = body;
+        return pdpFixture.response as T;
+      },
+      async getJson<T>(): Promise<T> {
+        throw new Error("no");
+      },
+      async getText(): Promise<string> {
+        throw new Error("no");
+      },
+    };
+    const adapter = new CencosudAdapter(SANTA_ISABEL_CONFIG, http);
+    await adapter.getProduct("algun-slug", {
+      store: "santaisabel",
+      branchId: "manquehue",
+    });
+    expect(seenBody.store).toBe("manquehue");
   });
 
   it("getOffers explica que no hay colección para el banner", async () => {
+    const adapter = new CencosudAdapter(SANTA_ISABEL_CONFIG);
     await expect(adapter.getOffers()).rejects.toThrow(
       /no está disponible|colección/
     );

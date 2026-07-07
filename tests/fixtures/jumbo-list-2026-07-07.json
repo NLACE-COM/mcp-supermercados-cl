@@ -1,0 +1,51 @@
+{
+  "_comment": "Esquema REAL de una lista guardada de Jumbo capturada con sesión del usuario el 2026-07-07. Endpoints del BFF: GET /lists (listas del usuario), GET /lists/inspiration-list (sugeridas), GET /lists/{scope}/{idList}?store={branchId} (detalle con items). Top-level: {idList, name, description, items[], isFavorite, image}. Cada item: {idItem, name, price, listPrice, quantity, promotions[], measurementUnit, unitMultiplier, stock}. El precio socio sale de promotions[] con userProperties PRIME_USER (igual que carro/PDP).",
+  "endpoints": {
+    "userLists": "GET https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com/lists?store={branchId}",
+    "inspiration": "GET https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com/lists/inspiration-list?perPage=5&page=1&store={branchId}",
+    "detail": "GET https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com/lists/inspiration-list/{idList}?store={branchId}"
+  },
+  "list": {
+    "idList": "p6LE_3Xq8_tlayZN_NPc7",
+    "name": "Productos frecuentes",
+    "isFavorite": false,
+    "itemsQuantity": 128,
+    "items": [
+      {
+        "idItem": "165423",
+        "name": "Yogurt Soprole Proteína Power Frutilla 155 g",
+        "price": 720,
+        "listPrice": 900,
+        "measurementUnit": "un",
+        "unitMultiplier": 1,
+        "quantity": 1,
+        "stock": true,
+        "itemQuantityLimit": 12,
+        "promotions": [
+          {
+            "type": "percentual",
+            "value": 20,
+            "unitPrice": 720,
+            "userProperties": [],
+            "description": "JUMBO CAE JUMBO DAYS DEL 07 AL 13 JULIO 2026"
+          }
+        ]
+      },
+      {
+        "idItem": "11149",
+        "name": "Salame Artesanal Receta del Abuelo Granel",
+        "price": 1472,
+        "listPrice": 1840,
+        "measurementUnit": "kg",
+        "unitMultiplier": 0.3,
+        "quantity": 1,
+        "stock": true,
+        "itemQuantityLimit": 99,
+        "promotions": [
+          { "type": "nominal", "unitPrice": 1472, "userProperties": [], "description": "Oferta" },
+          { "type": "nominal", "unitPrice": 1288, "userProperties": "PRIME_USER", "description": "Jumbo Prime" }
+        ]
+      }
+    ]
+  }
+}

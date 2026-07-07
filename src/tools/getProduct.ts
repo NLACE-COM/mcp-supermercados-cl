@@ -16,19 +16,28 @@ export function registerGetProduct(server: McpServer): void {
         store: z
           .enum(["jumbo", "santaisabel"])
           .default("jumbo")
-          .describe("Cadena. jumbo (con precio Prime). santaisabel: usar search_products (su ficha requiere comuna)."),
+          .describe("Cadena: jumbo (precio Prime) o santaisabel (precio socio, sucursal por defecto o vía branchId)."),
         idOrUrl: z
           .string()
           .min(1)
           .describe(
             "URL completa, path (\"/arroz-.../p\") o slug del producto. Usar el `url` devuelto por search_products."
           ),
+        branchId: z
+          .string()
+          .optional()
+          .describe(
+            "Sucursal para el precio local. Santa Isabel: nombre de tienda (ej. \"pedrofontova\"); por defecto usa una sucursal céntrica."
+          ),
       },
     },
-    async ({ store, idOrUrl }) => {
+    async ({ store, idOrUrl, branchId }) => {
       try {
         const adapter = getAdapter(store);
-        const product = await adapter.getProduct(idOrUrl);
+        const product = await adapter.getProduct(
+          idOrUrl,
+          branchId ? { store, branchId } : undefined
+        );
         if (!product) {
           return {
             content: [
