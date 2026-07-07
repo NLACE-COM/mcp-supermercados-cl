@@ -1,20 +1,39 @@
 # mcp-supermercados-cl
 
 Servidor MCP para armar la mejor lista de compra dentro de un supermercado
-chileno, empezando por Jumbo. El foco es profundidad en la cadena donde el
-usuario ya compra (precios club, beneficios por RUT, historial), no la
-comparación entre cadenas.
+chileno con Claude o ChatGPT. El foco es **profundidad en la cadena donde el
+usuario ya compra** — precios club, beneficios por RUT, historial — con la
+comparación entre cadenas como capacidad secundaria.
 
-**Estado: Jumbo completo (fases 1-3) · Santa Isabel búsqueda (fase 4).**
+100% local: el tráfico sale de la máquina del usuario, a ritmo humano, y las
+credenciales nunca tocan un servidor central.
+
+## Estado
+
+Cinco cadenas, ciclo completo en Jumbo. Todas las fases del plan implementadas.
 
 | Fase | Alcance | Estado |
 |---|---|---|
-| 1 | Jumbo lectura pública (`search_products`, `get_product`, `get_offers`) | ✅ completa |
-| 2 | Jumbo con sesión: productos frecuentes, precio socio Prime | `get_frequent_purchases` + `get_member_price` ✅ · listas guardadas pendiente |
-| 3 | `build_list` (prioriza frecuentes), `suggest_swaps`, carro (`add_to_cart`, `get_cart`) | ✅ completa |
-| 4 | Santa Isabel (mismo adaptador Cencosud) | `search_products` ✅ (precios y ofertas reales) · su ficha/ofertas requieren comuna, pendientes |
-| 4 | Santa Isabel (mismo adaptador Cencosud) | pendiente |
-| 5-7 | Unimarc, Tottus, Lider, `compare_stores` | pendiente |
+| 1 | Jumbo lectura pública (`search_products`, `get_product`, `get_offers`) | ✅ |
+| 2 | Jumbo con sesión: productos frecuentes, precio socio Prime | ✅ (listas guardadas: pendiente) |
+| 3 | `build_list` (prioriza frecuentes), `suggest_swaps`, carro | ✅ |
+| 4 | Santa Isabel (mismo adaptador Cencosud) | ✅ búsqueda |
+| 5 | Unimarc (VTEX/BFF) y Tottus (Falabella SSR) | ✅ búsqueda |
+| 6 | Lider (Walmart Glass SSR) | ✅ búsqueda |
+| 7 | `compare_stores` + publicación open source | ✅ |
+
+### Cobertura por cadena
+
+| Cadena | Plataforma | Búsqueda | Precio socio | Sesión / carro |
+|---|---|---|---|---|
+| Jumbo | Cencosud (Constructor.io) | ✅ | ✅ Prime | ✅ frecuentes + carro |
+| Santa Isabel | Cencosud (Constructor.io) | ✅ | — (requiere comuna) | — |
+| Unimarc | VTEX (BFF propio) | ✅ | ✅ Club Unimarc | — |
+| Tottus | Falabella (Next.js SSR) | ✅ | — | — |
+| Lider | Walmart Glass (SSR) | ✅ | ✅ cuando aplica | — |
+
+Unimarc, Tottus y Lider requieren **IP residencial** (la máquina del usuario);
+desde datacenter bloquean. El MCP corre local, así que en producción funcionan.
 
 ## Uso
 
@@ -36,45 +55,74 @@ En Claude Desktop / Claude Code (`.mcp.json`):
 }
 ```
 
-O en desarrollo: `npm run inspector` (MCP Inspector) / `npm run dev`.
+En desarrollo: `npm run inspector` (MCP Inspector) o `npm run dev`.
 
 ## Tools
 
+Núcleo — armar la mejor lista con la sesión del usuario:
+
 - `build_list` — convierte una lista en lenguaje natural en productos
   concretos: prioriza tus **productos frecuentes** (si se pasan sus cards de
-  sesión), luego mejor precio por unidad + ofertas, con alternativas por
-  ítem, total estimado y ahorro.
-- `get_frequent_purchases` — tus productos habituales normalizados, con
-  precio vigente, normal y **precio socio Jumbo Prime**. Requiere sesión: el
-  cliente entrega las cards del DOM (el servidor nunca ve credenciales).
+  sesión), luego mejor precio por unidad + ofertas, con alternativas por ítem,
+  total estimado y ahorro.
 - `suggest_swaps` — reemplazos comparables con mejor precio por unidad.
-- `add_to_cart` / `get_cart` — deja la lista en el carro de Jumbo y muestra
-  el estado (total, ahorro y ahorro Prime). El servidor no ve credenciales:
-  arma el request que ejecuta el navegador logueado del usuario.
-- `adapter_status` — diagnóstico en vivo de las cadenas soportadas.
-- `search_products` — busca en Jumbo. Devuelve precios normalizados en CLP:
-  `price` (vigente), `listPrice` (normal si hay oferta), `unitPrice`+`unit`
-  (CLP por kg/lt/un), stock, y con `branchId` los precios de una sucursal.
-- `get_product` — detalle por URL/slug, incluye `memberPrice` (precio
-  socio Jumbo Prime, visible sin login) y EAN.
-- `get_offers` — ofertas vigentes, filtrables por categoría y sucursal;
+- `get_frequent_purchases` — tus productos habituales, con precio vigente,
+  normal y **precio socio Jumbo Prime**. Requiere sesión: el cliente entrega
+  las cards del DOM (el servidor nunca ve credenciales).
+- `add_to_cart` / `get_cart` — deja la lista en el carro de Jumbo y muestra el
+  estado (total, ahorro y ahorro Prime). El servidor no ve credenciales: arma
+  el request que ejecuta el navegador logueado del usuario.
+
+Lectura de catálogo:
+
+- `search_products` — busca en cualquier cadena. Precios en CLP: `price`
+  (vigente), `listPrice` (normal si hay oferta), `memberPrice` (socio),
+  `unitPrice`+`unit` (por kg/lt/un), stock, y con `branchId` precios de sucursal.
+- `get_product` — detalle por URL/slug (Jumbo: incluye precio Prime y EAN).
+- `get_offers` — ofertas vigentes de Jumbo, filtrables por categoría/sucursal;
   `primeOnly` para las exclusivas de socios.
+
+Comparación (secundaria) y diagnóstico:
+
+- `compare_stores` — estima el total de una lista en varias cadenas y señala
+  la más barata entre las que tienen todos los ítems.
+- `adapter_status` — qué cadenas responden ahora y con qué latencia.
+
+## Sesión (sin credenciales en el servidor)
+
+El precio socio, los frecuentes y el carro viven detrás del login. El token de
+Jumbo vive en el `localStorage` del navegador, así que el servidor **nunca**
+ve credenciales: el cliente (junto al navegador logueado del usuario) extrae
+las cards del DOM o ejecuta las llamadas autenticadas, y el MCP normaliza el
+resultado. Ver `src/adapters/session.ts` y `docs/captura-cencosud-2026-07-06.md`.
 
 ## Tests
 
 ```bash
-npm test          # contrato con fixtures reales grabadas (sin red)
-npm run test:live # smoke contra jumbo.cl (opt-in, valida solo esquema)
+npm test          # contrato con fixtures reales grabadas (sin red), 72 tests
+npm run test:live # smoke contra los sitios reales (opt-in, valida esquema)
 ```
+
+Los tests de contrato usan respuestas reales grabadas en `tests/fixtures/`
+(regrabar cuando una cadena cambie el formato, anotando fecha). Los live son
+opt-in con `LIVE=1`; los de Unimarc/Tottus/Lider requieren IP residencial.
 
 ## Diseño
 
-- Un servidor, un adaptador por cadena (`src/adapters/`), esquema normalizado
-  con zod (`src/core/types.ts`) donde precio normal y precio socio van
-  separados.
-- HTTP a ritmo humano: 1 req/s por dominio con jitter, reintentos con
-  backoff, user-agent realista (`src/http/client.ts`).
-- 100% local: el tráfico sale de la máquina del usuario; las credenciales
-  (fase 2) nunca tocan un servidor central.
-- Endpoints documentados en `docs/captura-cencosud-2026-07-06.md` y en los
-  planes (`PLAN-mcp-supermercados-chile.md`).
+- Un servidor, un adaptador por cadena (`src/adapters/`). Esquema normalizado
+  con zod (`src/core/types.ts`): precio normal y precio socio **separados**.
+- HTTP a ritmo humano: 1 req/s por dominio con jitter, reintentos con backoff,
+  user-agent realista (`src/http/client.ts`). Cache TTL 15 min.
+- Adaptadores aislados: un cambio de sitio rompe un adaptador, no todo.
+- Endpoints documentados en `docs/` y en `PLAN-mcp-supermercados-chile.md`.
+
+## Aviso legal
+
+Herramienta personal, de código abierto, sin backend central. Cada usuario
+opera su propia cuenta desde su propia IP, a ritmo humano, sin redistribuir
+datos. Revisa los Términos y Condiciones de cada cadena antes de usarla. No
+afiliado a Cencosud, SMU, Falabella ni Walmart.
+
+## Licencia
+
+MIT — ver [LICENSE](LICENSE).

@@ -27,6 +27,11 @@ export interface HttpGetOptions {
 export interface HttpFetcher {
   getJson<T = unknown>(url: string, opts?: HttpGetOptions): Promise<T>;
   getText(url: string, opts?: HttpGetOptions): Promise<string>;
+  postJson<T = unknown>(
+    url: string,
+    body: unknown,
+    opts?: HttpGetOptions
+  ): Promise<T>;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -66,8 +71,33 @@ export class HttpClient implements HttpFetcher {
     return res.text();
   }
 
+  async postJson<T = unknown>(
+    url: string,
+    body: unknown,
+    opts: HttpGetOptions = {}
+  ): Promise<T> {
+    const res = await this.request(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...opts.headers,
+      },
+    });
+    return (await res.json()) as T;
+  }
+
   /** GET con rate limit por host y reintentos. Lanza si agota reintentos. */
   async get(url: string, opts: HttpGetOptions = {}): Promise<Response> {
+    return this.request(url, { method: "GET", headers: opts.headers });
+  }
+
+  /** Request con rate limit por host y reintentos, para GET y POST. */
+  private async request(
+    url: string,
+    opts: { method: string; body?: string; headers?: Record<string, string> }
+  ): Promise<Response> {
     const host = new URL(url).host;
     // Serializar por host: encadenar sobre la cola existente.
     const prev = this.queues.get(host) ?? Promise.resolve();
@@ -97,7 +127,7 @@ export class HttpClient implements HttpFetcher {
 
   private async getWithRetries(
     url: string,
-    opts: HttpGetOptions
+    opts: { method?: string; body?: string; headers?: Record<string, string> }
   ): Promise<Response> {
     let lastError: unknown;
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
@@ -107,6 +137,8 @@ export class HttpClient implements HttpFetcher {
       }
       try {
         const res = await fetch(url, {
+          method: opts.method ?? "GET",
+          ...(opts.body !== undefined ? { body: opts.body } : {}),
           headers: {
             "User-Agent": this.userAgent,
             "Accept-Language": "es-CL,es;q=0.9",

@@ -20,9 +20,9 @@ export function registerBuildList(server: McpServer): void {
         "Si el usuario prefiere marcas específicas, incluirlas en el texto del ítem (ej. \"leche colun\").",
       inputSchema: {
         store: z
-          .enum(["jumbo", "santaisabel"])
+          .enum(["jumbo", "santaisabel", "unimarc", "tottus", "lider"])
           .default("jumbo")
-          .describe("Cadena: jumbo o santaisabel."),
+          .describe("Cadena: jumbo, santaisabel, unimarc, tottus o lider."),
         items: z
           .array(z.string().min(1))
           .min(1)

@@ -1,0 +1,57 @@
+{
+  "_comment": "Búsqueda REAL de Unimarc (VTEX/BFF) capturada 2026-07-07. POST https://bff-unimarc-ecommerce.unimarc.cl/catalog/product/search con body {from,to,searching,promotionsOnly,orderBy,userTriggered}. Respuesta: availableProducts[] con {price, item, priceDetail}. price.price es el vigente (string $), price.listPrice el normal, price.ppum el precio por unidad. priceDetail.promotionalTag.text 'Club Unimarc' marca el precio socio.",
+  "source": "POST https://bff-unimarc-ecommerce.unimarc.cl/catalog/product/search",
+  "requestBody": { "from": "0", "to": "49", "searching": "detergente", "promotionsOnly": false, "orderBy": "", "userTriggered": true },
+  "query": "detergente",
+  "count": 50,
+  "availableProducts": [
+    {
+      "price": {
+        "price": "$1.000",
+        "listPrice": "$1.290",
+        "priceWithoutDiscount": "$1.290",
+        "inOffer": true,
+        "ppum": "$2.500 x litro",
+        "ppumListPrice": "$3.225 x litro",
+        "saving": "Ahorras $290"
+      },
+      "item": {
+        "sku": "87622",
+        "name": "Detergente líquido Omo ultra power doypack 400 ml",
+        "brand": "Omo",
+        "slug": "/det-liq-ultra-power-dp-omo-400-ml/p",
+        "ean": "7805000323677",
+        "measurementUnitUn": "litro",
+        "unitMultiplierUn": 0.4,
+        "netContent": "400 ml"
+      },
+      "priceDetail": {
+        "discountPercentage": 22,
+        "promotionalTag": { "campaignId": "C011", "text": "Club Unimarc", "color": "#b9f2ff", "textColor": "#054453" },
+        "membership": []
+      }
+    },
+    {
+      "price": {
+        "price": "$3.690",
+        "listPrice": "$3.690",
+        "priceWithoutDiscount": "$3.690",
+        "inOffer": false,
+        "ppum": "$738 x litro",
+        "ppumListPrice": "$738 x litro",
+        "saving": ""
+      },
+      "item": {
+        "sku": "86503",
+        "name": "Detergente líquido Merkat matic floral 5 L",
+        "brand": "Merkat",
+        "slug": "/det-liq-matic-floral-merkat-5-lt/p",
+        "ean": "7801234567890",
+        "measurementUnitUn": "litro",
+        "unitMultiplierUn": 5,
+        "netContent": "5 L"
+      },
+      "priceDetail": { "discountPercentage": null, "promotionalTag": null, "membership": [] }
+    }
+  ]
+}

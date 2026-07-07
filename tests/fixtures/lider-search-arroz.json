@@ -1,0 +1,59 @@
+{
+  "_comment": "Búsqueda REAL de Lider (Walmart Glass, SSR __NEXT_DATA__) capturada 2026-07-07 desde IP residencial, SIN bloqueo PerimeterX (el SSR trae los datos, no hizo falta el GraphQL). GET https://super.lider.cl/search?query={q}. Productos con __typename 'Product' en el árbol de __NEXT_DATA__. priceInfo.linePrice es el vigente, wasPrice el normal, unitPrice el precio por unidad. memberPriceString cuando hay precio socio.",
+  "source": "GET https://super.lider.cl/search?query={q} -> __NEXT_DATA__ (nodes __typename=Product)",
+  "query": "arroz",
+  "count": 46,
+  "products": [
+    {
+      "__typename": "Product",
+      "usItemId": "00780142021013",
+      "name": "Arroz Grado 2 Grano Largo Bolsa, 1 kg",
+      "brand": "Tucapel",
+      "canonicalUrl": "/ip/arroz-y-legumbres/00780142021013",
+      "salesUnitType": "EACH",
+      "availabilityStatus": "IN_STOCK",
+      "priceInfo": {
+        "itemPrice": "$1.790",
+        "linePrice": "$1.190",
+        "wasPrice": "$1.790",
+        "unitPrice": "$1.190 x kg",
+        "savingsAmt": 600,
+        "memberPriceString": ""
+      }
+    },
+    {
+      "__typename": "Product",
+      "usItemId": "00780311010221",
+      "name": "Arroz Grado 1 Grano Largo Bolsa., 1 kg",
+      "brand": "Banquete",
+      "canonicalUrl": "/ip/arroz-y-legumbres/00780311010221",
+      "salesUnitType": "EACH",
+      "availabilityStatus": "IN_STOCK",
+      "priceInfo": {
+        "itemPrice": "$2.250",
+        "linePrice": "$1.690",
+        "wasPrice": "$2.250",
+        "unitPrice": "$1.690 x kg",
+        "savingsAmt": 560,
+        "memberPriceString": ""
+      }
+    },
+    {
+      "__typename": "Product",
+      "usItemId": "00780555010101",
+      "name": "Arroz Premium Grado 1, 1 kg",
+      "brand": "Miraflores",
+      "canonicalUrl": "/ip/arroz-y-legumbres/00780555010101",
+      "salesUnitType": "EACH",
+      "availabilityStatus": "IN_STOCK",
+      "priceInfo": {
+        "itemPrice": "$1.590",
+        "linePrice": "$1.590",
+        "wasPrice": "",
+        "unitPrice": "$1.590 x kg",
+        "savingsAmt": 0,
+        "memberPriceString": ""
+      }
+    }
+  ]
+}

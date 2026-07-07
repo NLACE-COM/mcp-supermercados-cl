@@ -15,9 +15,9 @@ export function registerSuggestSwaps(server: McpServer): void {
         "Útil después de build_list para optimizar la lista.",
       inputSchema: {
         store: z
-          .enum(["jumbo", "santaisabel"])
+          .enum(["jumbo", "santaisabel", "unimarc", "tottus", "lider"])
           .default("jumbo")
-          .describe("Cadena: jumbo o santaisabel."),
+          .describe("Cadena: jumbo, santaisabel, unimarc, tottus o lider."),
         items: z
           .array(z.string().min(1))
           .min(1)

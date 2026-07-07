@@ -1,0 +1,34 @@
+{
+  "_comment": "Búsqueda REAL de Tottus (SSR __NEXT_DATA__, props.pageProps.results) capturada 2026-07-07 desde IP residencial. GET https://www.tottus.cl/tottus-cl/buscar?Ntt={query}. Los precios vienen como strings con separador de miles: prices[type=internetPrice] es el vigente (con pum = precio por unidad), prices[type=normalPrice, crossed=true] es el precio tachado.",
+  "source": "GET https://www.tottus.cl/tottus-cl/buscar?Ntt={query} -> __NEXT_DATA__ props.pageProps.results",
+  "query": "arroz",
+  "count": 48,
+  "products": [
+    {
+      "productId": "110607034",
+      "skuId": "110607035",
+      "displayName": "Arroz Tottus G2 Grano Largo Delgado 1 Kg",
+      "brand": "TOTTUS",
+      "url": "https://www.tottus.cl/tottus-cl/articulo/110607034/arroz-tottus-g2-largo-fino-1-kg",
+      "sellerName": "Tottus",
+      "prices": [
+        { "type": "internetPrice", "crossed": false, "symbol": "$ ", "price": ["950"], "pum": { "label": "KG", "type": "pum", "symbol": "$ ", "price": ["950"] } },
+        { "type": "normalPrice", "crossed": true, "symbol": "$ ", "price": ["1.190"] }
+      ],
+      "measurements": { "format": "1 KG", "unit": "UN", "minUnits": 1, "maxUnits": 6 },
+      "discountBadge": { "label": "-20%" }
+    },
+    {
+      "productId": "50051234",
+      "skuId": "50051235",
+      "displayName": "Arroz Grado 1 Miraflores Grano Largo Ancho 1 Kg",
+      "brand": "MIRAFLORES",
+      "url": "https://www.tottus.cl/tottus-cl/articulo/50051234/arroz-miraflores-g1-1-kg",
+      "sellerName": "Tottus",
+      "prices": [
+        { "type": "internetPrice", "crossed": false, "symbol": "$ ", "price": ["1.290"], "pum": { "label": "KG", "type": "pum", "symbol": "$ ", "price": ["1.290"] } }
+      ],
+      "measurements": { "format": "1 KG", "unit": "UN", "minUnits": 1, "maxUnits": 12 }
+    }
+  ]
+}

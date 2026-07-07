@@ -20,9 +20,12 @@ export function registerSearchProducts(server: McpServer): void {
         "sin él, catálogo nacional. Para el precio socio (Prime) de un producto puntual, usar get_product.",
       inputSchema: {
         store: z
-          .enum(["jumbo", "santaisabel"])
+          .enum(["jumbo", "santaisabel", "unimarc", "tottus", "lider"])
           .default("jumbo")
-          .describe("Cadena donde buscar: jumbo o santaisabel (mismo backend Cencosud)."),
+          .describe(
+            "Cadena donde buscar: jumbo, santaisabel, unimarc, tottus o lider. " +
+              "unimarc/tottus/lider requieren IP residencial (la máquina del usuario)."
+          ),
         query: z
           .string()
           .min(1)
