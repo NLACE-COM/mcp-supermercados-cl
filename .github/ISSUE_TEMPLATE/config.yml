@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Pregunta o duda de uso
+    url: https://github.com/NLACE-COM/mcp-supermercados-cl/discussions
+    about: Para dudas de instalación o uso, usa Discussions en vez de un issue.

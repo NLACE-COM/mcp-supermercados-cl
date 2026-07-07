@@ -107,7 +107,9 @@ export class LiderAdapter implements StoreAdapter {
     const promotions = (p.badges?.flags ?? [])
       .filter((f) => f.text && f.type !== "ICON")
       .map((f) => parseBundle(f.text))
-      .filter((b): b is NonNullable<typeof b> => b !== undefined && b.type === "bundle");
+      .filter(
+        (b): b is NonNullable<typeof b> => b !== undefined && b.type === "bundle"
+      );
 
     return {
       store: this.id,
@@ -153,9 +155,7 @@ export class LiderAdapter implements StoreAdapter {
 
 /** Mejor URL de imagen de un producto de Lider. */
 function imageUrl(p: LiderProduct): string | undefined {
-  return (
-    p.imageInfo?.thumbnailUrl || p.imageInfo?.allImages?.[0]?.url || undefined
-  );
+  return p.imageInfo?.thumbnailUrl || p.imageInfo?.allImages?.[0]?.url || undefined;
 }
 
 /**

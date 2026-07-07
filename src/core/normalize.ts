@@ -2,11 +2,7 @@
 
 /** Minúsculas y sin tildes, para matching de texto entre cadenas. */
 export function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .trim();
+  return text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 }
 
 /**
@@ -102,9 +98,7 @@ export function normalizeUnitPrice(
  *  - "4 por 3 a $2.700" / "2x1" -> nxm
  * Devuelve undefined si no reconoce el patrón.
  */
-export function parseBundle(
-  text: string | null | undefined
-):
+export function parseBundle(text: string | null | undefined):
   | {
       description: string;
       type: string;
@@ -118,9 +112,7 @@ export function parseBundle(
   if (desc.length === 0) return undefined;
 
   // "N x $X", "combina N x $X", "lleva N por $X" — el $ distingue del NxM.
-  const bundle = desc.match(
-    /(?:combina|lleva)?\s*(\d+)\s*(?:x|por)\s*\$\s*([\d.]+)/i
-  );
+  const bundle = desc.match(/(?:combina|lleva)?\s*(\d+)\s*(?:x|por)\s*\$\s*([\d.]+)/i);
   if (bundle) {
     const minQuantity = Number(bundle[1]);
     const bundlePrice = Number(bundle[2].replace(/\./g, ""));

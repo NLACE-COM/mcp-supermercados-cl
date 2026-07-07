@@ -19,11 +19,8 @@ import type {
   StoreId,
 } from "../core/types.js";
 import { defaultHttpClient, type HttpFetcher } from "../http/client.js";
-import { NotImplementedError, type StoreAdapter } from "./base.js";
-import {
-  extractFrequentCardsFromHtml,
-  parseFrequentCard,
-} from "./cencosudSession.js";
+import { type StoreAdapter } from "./base.js";
+import { extractFrequentCardsFromHtml, parseFrequentCard } from "./cencosudSession.js";
 import { parseCart } from "./cencosudCart.js";
 import { parseShoppingLists } from "./cencosudLists.js";
 
@@ -214,10 +211,7 @@ export class CencosudAdapter implements StoreAdapter {
       _dt: String(Date.now()),
     });
     if (opts.branchId) {
-      params.set(
-        "variations_map",
-        JSON.stringify(buildVariationsMap(opts.branchId))
-      );
+      params.set("variations_map", JSON.stringify(buildVariationsMap(opts.branchId)));
     }
 
     const url = `https://${this.config.constructorHost}/search/${encodeURIComponent(
@@ -389,9 +383,7 @@ export class CencosudAdapter implements StoreAdapter {
     const promotions: Array<Record<string, any>> = Array.isArray(item.promotions)
       ? item.promotions
       : [];
-    const primePromo = promotions.find(
-      (p) => p?.userProperties === "PRIME_USER"
-    );
+    const primePromo = promotions.find((p) => p?.userProperties === "PRIME_USER");
     const memberPrice = primePromo ? toClp(primePromo.unitPrice) : undefined;
 
     const pillName: string | undefined = data?.pill?.name || item?.pill?.name;
@@ -399,7 +391,10 @@ export class CencosudAdapter implements StoreAdapter {
     const offer =
       listPrice !== undefined || publicPromo
         ? {
-            type: pillName?.toLowerCase() === "oferta" ? "descuento" : (pillName ?? "descuento"),
+            type:
+              pillName?.toLowerCase() === "oferta"
+                ? "descuento"
+                : (pillName ?? "descuento"),
             ...(publicPromo?.description
               ? { description: publicPromo.description as string }
               : {}),
@@ -417,13 +412,8 @@ export class CencosudAdapter implements StoreAdapter {
       unitPrice = norm.unitPrice;
       unit = norm.unit;
     } else {
-      unit = item.measurementUnitUn
-        ? normalizeUnit(item.measurementUnitUn)
-        : undefined;
-      unitPrice = computeUnitPrice(
-        price,
-        item.unitMultiplierUn as number | undefined
-      );
+      unit = item.measurementUnitUn ? normalizeUnit(item.measurementUnitUn) : undefined;
+      unitPrice = computeUnitPrice(price, item.unitMultiplierUn as number | undefined);
     }
 
     // Bundles: promociones con mQuantity > 1 ("Lleva N por $X"). El precio
@@ -558,10 +548,7 @@ export class CencosudAdapter implements StoreAdapter {
     });
     if (opts.groupId) params.set("filters[group_id]", opts.groupId);
     if (opts.branchId) {
-      params.set(
-        "variations_map",
-        JSON.stringify(buildVariationsMap(opts.branchId))
-      );
+      params.set("variations_map", JSON.stringify(buildVariationsMap(opts.branchId)));
     }
     return `https://${this.config.constructorHost}/browse/collection_id/${collectionId}?${params.toString()}`;
   }
@@ -632,7 +619,9 @@ export class CencosudAdapter implements StoreAdapter {
     if (session.fetchAuthedHtml) {
       // Fallback: pedir el JSON de listas por el puente HTML si el cliente
       // lo enruta (algunos puentes devuelven texto JSON).
-      const text = await session.fetchAuthedHtml("/lists?store=" + (session.branchId ?? ""));
+      const text = await session.fetchAuthedHtml(
+        "/lists?store=" + (session.branchId ?? "")
+      );
       try {
         return parseShoppingLists(JSON.parse(text), this.id);
       } catch {
@@ -704,7 +693,7 @@ export class CencosudAdapter implements StoreAdapter {
   private requireBranch(session: Session): string {
     if (!session.branchId) {
       throw new Error(
-        "El carro requiere branchId (sucursal de la sesión, ej. \"jumboclj512\")."
+        'El carro requiere branchId (sucursal de la sesión, ej. "jumboclj512").'
       );
     }
     return session.branchId;
@@ -743,7 +732,10 @@ function cencosudDescription(data: any): string | undefined {
     undefined;
   if (!raw) return undefined;
   // limpiar HTML y recortar
-  const text = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const text = raw
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return text.length > 0 ? text.slice(0, 600) : undefined;
 }
 

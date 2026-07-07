@@ -18,6 +18,7 @@ La app también manda `session` y `anonymous` (ids generados por cliente), pero
 no son necesarios: con los tres headers fijos el endpoint responde 200.
 
 Respuesta: `availableProducts[]` (y `notAvailableProducts[]`). Por producto:
+
 - `price.price` (vigente, string "$1.000"), `price.listPrice` (normal),
   `price.priceWithoutDiscount`, `price.inOffer`, `price.ppum` ("$2.500 x litro").
 - `item`: `sku`, `name`, `brand`, `slug` ("/…/p"), `ean`, `measurementUnitUn`,
@@ -38,6 +39,7 @@ GET https://www.tottus.cl/tottus-cl/buscar?Ntt={query}&page=N&store=to_com
 HTML con `<script id="__NEXT_DATA__">` → `props.pageProps.results` (48 por
 página). Por producto: `productId`, `skuId`, `displayName`, `brand`, `url`,
 `measurements.format`, y `prices[]`:
+
 - `type:"internetPrice"` (vigente) con `pum` (precio por unidad, label KG/LT).
 - `type:"normalPrice"`, `crossed:true` (precio tachado).
 - `discountBadge.label` ("-20%").
@@ -55,6 +57,7 @@ productos (nodos `__typename:"Product"` en un árbol anidado; se recorre
 buscando el arreglo). Por producto: `usItemId`, `name`, `brand`,
 `canonicalUrl` ("/ip/…"), `availabilityStatus` ("IN_STOCK"), `salesUnitType`, y
 `priceInfo`:
+
 - `linePrice` (vigente), `wasPrice` (normal/tachado), `unitPrice`
   ("$1.190 x kg"), `savingsAmt`, `memberPriceString` (socio cuando aplica).
 

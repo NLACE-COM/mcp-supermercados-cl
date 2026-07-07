@@ -43,11 +43,7 @@ export interface HttpGetOptions {
 export interface HttpFetcher {
   getJson<T = unknown>(url: string, opts?: HttpGetOptions): Promise<T>;
   getText(url: string, opts?: HttpGetOptions): Promise<string>;
-  postJson<T = unknown>(
-    url: string,
-    body: unknown,
-    opts?: HttpGetOptions
-  ): Promise<T>;
+  postJson<T = unknown>(url: string, body: unknown, opts?: HttpGetOptions): Promise<T>;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -71,10 +67,8 @@ export class HttpClient implements HttpFetcher {
     this.minDelayMs =
       options.minDelayMs ?? envInt("SUPERMERCADOS_MIN_DELAY_MS") ?? 1000;
     this.jitterMs = options.jitterMs ?? 400;
-    this.maxRetries =
-      options.maxRetries ?? envInt("SUPERMERCADOS_MAX_RETRIES") ?? 1;
-    this.timeoutMs =
-      options.timeoutMs ?? envInt("SUPERMERCADOS_TIMEOUT_MS") ?? 8000;
+    this.maxRetries = options.maxRetries ?? envInt("SUPERMERCADOS_MAX_RETRIES") ?? 1;
+    this.timeoutMs = options.timeoutMs ?? envInt("SUPERMERCADOS_TIMEOUT_MS") ?? 8000;
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
     this.fastHostSuffixes = options.fastHostSuffixes ?? [];
     this.fastDelayMs =
@@ -130,7 +124,10 @@ export class HttpClient implements HttpFetcher {
     const prev = this.queues.get(host) ?? Promise.resolve();
     let release!: () => void;
     const current = new Promise<void>((r) => (release = r));
-    this.queues.set(host, prev.then(() => current));
+    this.queues.set(
+      host,
+      prev.then(() => current)
+    );
     await prev;
 
     try {
@@ -143,9 +140,7 @@ export class HttpClient implements HttpFetcher {
   }
 
   private isFastHost(host: string): boolean {
-    return this.fastHostSuffixes.some(
-      (s) => host === s || host.endsWith(`.${s}`)
-    );
+    return this.fastHostSuffixes.some((s) => host === s || host.endsWith(`.${s}`));
   }
 
   private async respectRateLimit(host: string): Promise<void> {
@@ -154,9 +149,7 @@ export class HttpClient implements HttpFetcher {
       const fast = this.isFastHost(host);
       const base = fast ? this.fastDelayMs : this.minDelayMs;
       // Jitter proporcional al ritmo del host para no perder la ganancia.
-      const jitter = fast
-        ? Math.min(this.jitterMs, 150)
-        : this.jitterMs;
+      const jitter = fast ? Math.min(this.jitterMs, 150) : this.jitterMs;
       const wait = base + Math.random() * jitter - (Date.now() - last);
       if (wait > 0) await sleep(wait);
     }

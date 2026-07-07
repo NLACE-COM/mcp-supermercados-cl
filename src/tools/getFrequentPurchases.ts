@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getAdapter } from "../core/registry.js";
 import { dataSession } from "../adapters/session.js";
+import { jumboFrequentCardsSnippet } from "../adapters/cencosudBrowser.js";
 import type { FrequentCard } from "../core/types.js";
 
 /**
@@ -19,14 +20,15 @@ export function registerGetFrequentPurchases(server: McpServer): void {
       description:
         "Devuelve los productos que el usuario compra habitualmente en la cadena, normalizados con su precio " +
         "vigente, precio normal y **precio socio Jumbo Prime** cuando aplica. Base para armar la lista con lo " +
-        "que la persona realmente compra. Requiere sesión iniciada: el cliente debe entregar las cards extraídas " +
-        "del DOM de la página de productos frecuentes en el parámetro `cards` (el servidor nunca maneja credenciales).",
+        "que la persona realmente compra. Requiere sesión: entrega en `cards` el resultado de ejecutar el " +
+        "`browserSnippet` (una sola pasada al DOM) en www.jumbo.cl/productos-frecuentes ya logueado. NO rasques " +
+        "el estado de React ni improvises selectores; usa el snippet. El servidor nunca maneja credenciales.",
       inputSchema: {
         store: z.enum(["jumbo"]).default("jumbo").describe("Cadena. Fase 2: jumbo."),
         branchId: z
           .string()
           .optional()
-          .describe("Sucursal de la sesión, ej. \"jumboclj512\"."),
+          .describe('Sucursal de la sesión, ej. "jumboclj512".'),
         cards: z
           .array(
             z.object({
@@ -48,6 +50,27 @@ export function registerGetFrequentPurchases(server: McpServer): void {
       },
     },
     async ({ store, branchId, cards }) => {
+      if (!cards || cards.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  needsCards: true,
+                  note:
+                    "Ejecuta browserSnippet en www.jumbo.cl/productos-frecuentes ya logueado " +
+                    "y pasa el arreglo resultante en `cards`. Es una sola pasada al DOM; " +
+                    "no rasques React ni improvises selectores.",
+                  browserSnippet: jumboFrequentCardsSnippet(),
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
       try {
         const adapter = getAdapter(store);
         const session = dataSession(store, {
@@ -59,7 +82,11 @@ export function registerGetFrequentPurchases(server: McpServer): void {
           content: [
             {
               type: "text",
-              text: JSON.stringify({ store, count: products.length, products }, null, 2),
+              text: JSON.stringify(
+                { store, count: products.length, products },
+                null,
+                2
+              ),
             },
           ],
         };

@@ -34,10 +34,7 @@ interface RawList {
 }
 
 /** Un item de lista -> Product normalizado (con precio Prime si aplica). */
-export function listItemToProduct(
-  raw: RawListItem,
-  store: StoreId
-): Product | null {
+export function listItemToProduct(raw: RawListItem, store: StoreId): Product | null {
   if (!raw.idItem || !raw.name) return null;
   const price = toClp(raw.price);
   if (price === undefined) return null;
@@ -67,10 +64,7 @@ export function listItemToProduct(
 }
 
 /** Normaliza el JSON crudo a ShoppingList (una lista o un arreglo de listas). */
-export function parseShoppingLists(
-  raw: unknown,
-  store: StoreId
-): ShoppingList[] {
+export function parseShoppingLists(raw: unknown, store: StoreId): ShoppingList[] {
   const lists: RawList[] = Array.isArray(raw)
     ? (raw as RawList[])
     : raw && typeof raw === "object"

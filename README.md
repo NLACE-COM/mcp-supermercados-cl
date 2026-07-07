@@ -5,7 +5,7 @@
 
 [![npm](https://img.shields.io/npm/v/mcp-supermercados-cl?logo=npm)](https://www.npmjs.com/package/mcp-supermercados-cl)
 ![node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
-![tests](https://img.shields.io/badge/tests-106%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-119%20passing-brightgreen)
 ![license](https://img.shields.io/badge/licencia-MIT-blue)
 
 El foco es **profundidad en la cadena donde tú ya compras** — precios club,
@@ -105,13 +105,13 @@ npm run inspector  # abre el MCP Inspector
 
 ## 🏬 Cobertura por cadena
 
-| Cadena | Plataforma | Búsqueda | Precio socio | Detalle | Sesión / carro |
-|---|---|:---:|:---:|:---:|:---:|
-| **Jumbo** | Cencosud (Constructor.io) | ✅ | ✅ Prime | ✅ | ✅ frecuentes, listas, carro |
-| **Santa Isabel** | Cencosud (Constructor.io) | ✅ | ✅ | ✅ | carro Cencosud¹ |
-| **Unimarc** | VTEX (BFF propio) | ✅ | ✅ Club Unimarc | — | — |
-| **Tottus** | Falabella (Next.js SSR) | ✅ | — | — | — |
-| **Lider** | Walmart Glass (SSR) | ✅ | —² | — | — |
+| Cadena           | Plataforma                | Búsqueda |  Precio socio   | Detalle |        Sesión / carro        |
+| ---------------- | ------------------------- | :------: | :-------------: | :-----: | :--------------------------: |
+| **Jumbo**        | Cencosud (Constructor.io) |    ✅    |    ✅ Prime     |   ✅    | ✅ frecuentes, listas, carro |
+| **Santa Isabel** | Cencosud (Constructor.io) |    ✅    |       ✅        |   ✅    |       carro Cencosud¹        |
+| **Unimarc**      | VTEX (BFF propio)         |    ✅    | ✅ Club Unimarc |    —    |              —               |
+| **Tottus**       | Falabella (Next.js SSR)   |    ✅    |        —        |    —    |              —               |
+| **Lider**        | Walmart Glass (SSR)       |    ✅    |       —²        |    —    |              —               |
 
 ¹ El carro de Santa Isabel reutiliza el mismo BFF Cencosud que Jumbo; se activa
 con tu sesión en santaisabel.cl.
@@ -131,29 +131,29 @@ precio vigente, precio normal, precio socio, **precio por unidad normalizado**
 
 **Núcleo — armar la mejor lista con tu sesión:**
 
-| Tool | Qué hace |
-|---|---|
-| `build_list` | Convierte una lista en lenguaje natural en productos concretos. Prioriza tus frecuentes, mejor precio por unidad y ofertas. Flags `onlyOffers` / `onlyInStock`. |
-| `suggest_swaps` | Reemplazos convenientes por precio por unidad. Con `preferNatural`: alternativas de precio similar con menos ingredientes. |
-| `get_frequent_purchases` | Tus productos habituales, con precio Prime (requiere sesión). |
-| `get_saved_lists` | Tus listas guardadas (requiere sesión). |
-| `add_to_cart` / `get_cart` | Deja la lista en el carro de Jumbo; total, ahorro y ahorro Prime. |
+| Tool                       | Qué hace                                                                                                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build_list`               | Convierte una lista en lenguaje natural en productos concretos. Prioriza tus frecuentes, mejor precio por unidad y ofertas. Flags `onlyOffers` / `onlyInStock`. |
+| `suggest_swaps`            | Reemplazos convenientes por precio por unidad. Con `preferNatural`: alternativas de precio similar con menos ingredientes.                                      |
+| `get_frequent_purchases`   | Tus productos habituales, con precio Prime (requiere sesión).                                                                                                   |
+| `get_saved_lists`          | Tus listas guardadas (requiere sesión).                                                                                                                         |
+| `add_to_cart` / `get_cart` | Deja la lista en el carro de Jumbo; total, ahorro y ahorro Prime.                                                                                               |
 
 **Lectura de catálogo:**
 
-| Tool | Qué hace |
-|---|---|
-| `search_products` | Busca en cualquier cadena. Filtros `maxPrice`/`minPrice`/`inStockOnly`, orden `sortBy` (price / unitPrice). |
-| `get_product` | Detalle por URL/slug: precio socio, EAN, **ingredientes** y sellos nutricionales. |
-| `get_offers` | Ofertas vigentes de Jumbo; `primeOnly`, filtro por categoría. |
-| `find_opportunities` | Mayores descuentos con stock, ordenados por `discountPct`. `excludeIds` para destacar lo que no tienes. |
+| Tool                 | Qué hace                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `search_products`    | Busca en cualquier cadena. Filtros `maxPrice`/`minPrice`/`inStockOnly`, orden `sortBy` (price / unitPrice). |
+| `get_product`        | Detalle por URL/slug: precio socio, EAN, **ingredientes** y sellos nutricionales.                           |
+| `get_offers`         | Ofertas vigentes de Jumbo; `primeOnly`, filtro por categoría.                                               |
+| `find_opportunities` | Mayores descuentos con stock, ordenados por `discountPct`. `excludeIds` para destacar lo que no tienes.     |
 
 **Comparación y diagnóstico:**
 
-| Tool | Qué hace |
-|---|---|
+| Tool             | Qué hace                                                   |
+| ---------------- | ---------------------------------------------------------- |
 | `compare_stores` | Total de una lista en varias cadenas; marca la más barata. |
-| `adapter_status` | Qué cadenas responden ahora y con qué latencia. |
+| `adapter_status` | Qué cadenas responden ahora y con qué latencia.            |
 
 ---
 
@@ -187,14 +187,38 @@ falso positivo.
 ## 🧪 Desarrollo y tests
 
 ```bash
-npm test          # tests de contrato con fixtures reales (sin red) — 106 tests
-npm run test:live # smoke contra los sitios reales (opt-in, LIVE=1)
+npm test           # tests de contrato con fixtures reales (sin red) — 119 tests
+npm run test:live  # smoke contra los sitios reales (opt-in, LIVE=1)
+npm run typecheck  # tsc --noEmit
+npm run lint       # ESLint
+npm run format     # Prettier (--write); format:check para verificar
 ```
 
 Los tests de contrato usan respuestas reales grabadas en
 [`tests/fixtures/`](tests/fixtures). Los live requieren red y, para
 Unimarc/Tottus/Lider, IP residencial. Regraba una fixture cuando una cadena
 cambie su formato, anotando la fecha.
+
+Cada push y PR corre `lint + typecheck + build + test` en CI (GitHub Actions,
+Node 20 y 22). Un smoke live semanal avisa por issue si una cadena cambia su
+formato. Para contribuir, revisa [CONTRIBUTING.md](CONTRIBUTING.md).
+
+### Flujo de sesión: manual o automatizado
+
+Las tools que requieren sesión (`get_cart`, `get_frequent_purchases`,
+`get_saved_lists`, `add_to_cart`) devuelven un `browserSnippet`: un fetch de
+**una sola llamada** para ejecutar en una pestaña ya logueada del sitio. Pasas
+el JSON de vuelta y la tool lo normaliza — el servidor nunca ve tu token.
+
+Para automatizarlo (sin copiar/pegar), existe un puente opcional con Playwright
+(`src/adapters/playwrightBridge.ts`) que reusa el perfil de Chrome donde ya
+tienes la sesión. Playwright **no** viene con el paquete (es pesado); instálalo
+aparte si lo quieres:
+
+```bash
+npm install playwright
+npx playwright install chromium
+```
 
 ---
 
@@ -235,6 +259,7 @@ src/
 comunidad. Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Ideas de alto impacto:
+
 - Carro/sesión en Unimarc, Tottus y Lider (cada una con su login propio).
 - Detalle (`get_product`) para Unimarc/Tottus/Lider.
 - Nuevas cadenas o farmacias.

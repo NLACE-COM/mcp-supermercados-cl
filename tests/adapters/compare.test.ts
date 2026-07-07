@@ -21,7 +21,11 @@ vi.mock("../../src/core/registry.js", () => ({
     id: store,
     async searchProducts(query: string) {
       if (store === "lider" && query === "café") return []; // Lider sin café
-      const base: Record<string, number> = { jumbo: 1000, santaisabel: 900, lider: 1100 };
+      const base: Record<string, number> = {
+        jumbo: 1000,
+        santaisabel: 900,
+        lider: 1100,
+      };
       return [product(store, `${query} ${store}`, base[store] ?? 1000)];
     },
   }),
@@ -47,5 +51,16 @@ describe("compareStores", () => {
     const lider = result.stores.find((s) => s.store === "lider")!;
     expect(lider.matched).toBe(0);
     expect(result.cheapest).toBe("jumbo");
+  });
+
+  it("reporta comparabilidad y disclaimer por ítem", async () => {
+    const result = await compareStores(["leche"], ["jumbo", "santaisabel"]);
+    expect(result.disclaimer).toMatch(/precio por unidad/i);
+    expect(result.comparability).toHaveLength(1);
+    const c = result.comparability[0];
+    expect(c.query).toBe("leche");
+    // Mismo unit "kg" en ambas, sin EAN => "similar".
+    expect(c.confidence).toBe("similar");
+    expect(c.chosen.map((x) => x.store).sort()).toEqual(["jumbo", "santaisabel"]);
   });
 });

@@ -5,6 +5,11 @@ import {
   buildCartPatchBody,
   parseCart,
 } from "../adapters/cencosudCart.js";
+import {
+  browserFetchNote,
+  jumboFetchSnippet,
+  jumboMutateSnippet,
+} from "../adapters/cencosudBrowser.js";
 
 /**
  * Tools de carro (fase 3). El servidor MCP nunca ve el token de Jumbo (vive
@@ -20,20 +25,22 @@ export function registerCartTools(server: McpServer): void {
     {
       title: "Agregar al carro",
       description:
-        "Prepara agregar/actualizar productos en el carro de Jumbo del usuario. Como el servidor no maneja " +
-        "credenciales, devuelve el request exacto a ejecutar por el navegador logueado " +
-        "(PATCH /cart/items con su body) y, si el cliente ya lo ejecutó y entrega el JSON del carro en " +
-        "`rawCartResult`, devuelve el carro normalizado (total, ahorro y ahorro Prime). Acción reversible " +
-        "(se puede quitar del carro); no es una compra.",
+        "Agrega/actualiza productos en el carro de Jumbo del usuario. El servidor no maneja credenciales: " +
+        "devuelve un `browserSnippet` (PATCH /cart/items con su body) para ejecutar en una pestaña YA LOGUEADA " +
+        "de www.jumbo.cl. Si el navegador lo ejecutó y entregas el JSON del carro en `rawCartResult`, devuelvo " +
+        "el carro normalizado (total, ahorro y ahorro Prime). Acción reversible (se puede quitar del carro); " +
+        "no es una compra.",
       inputSchema: {
         store: z.enum(["jumbo"]).default("jumbo").describe("Cadena. Fase 3: jumbo."),
         branchId: z
           .string()
-          .describe("Sucursal de la sesión, ej. \"jumboclj512\". Requerido."),
+          .describe('Sucursal de la sesión, ej. "jumboclj512". Requerido.'),
         items: z
           .array(
             z.object({
-              skuId: z.string().describe("id del producto (skuId / data-cnstrc-item-id)"),
+              skuId: z
+                .string()
+                .describe("id del producto (skuId / data-cnstrc-item-id)"),
               quantity: z.number().int().positive(),
               measurementUnitUn: z.string().optional(),
               unitMultiplierUn: z.number().optional(),
@@ -59,8 +66,9 @@ export function registerCartTools(server: McpServer): void {
         url: `${CART_BFF_BASE}/cart/items`,
         body,
         note:
-          "Ejecutar desde el navegador logueado del usuario (lleva sus headers de sesión: token, apiKey). " +
-          "Devolver el JSON del carro en rawCartResult para obtener el carro normalizado.",
+          browserFetchNote("el carro tras agregar los ítems") +
+          " Devuelve el JSON del carro en rawCartResult para normalizarlo.",
+        browserSnippet: jumboMutateSnippet("/cart/items", "PATCH", body),
       };
       if (rawCartResult !== undefined) {
         const cart = parseCart(rawCartResult, store);
@@ -87,20 +95,24 @@ export function registerCartTools(server: McpServer): void {
       title: "Estado del carro",
       description:
         "Normaliza el carro de Jumbo del usuario a { items, subTotal, total, savings, primeSavings }. " +
-        "El servidor no ve credenciales: el navegador logueado obtiene el JSON con " +
-        "GET /cart?store={branchId}&simulationTotals=true y lo entrega en `rawCart`. " +
-        "Si no se entrega, se devuelve la instrucción de cómo obtenerlo.",
+        "El servidor no ve credenciales. FLUJO RÁPIDO (una sola llamada): ejecuta el `browserSnippet` que " +
+        "devuelve esta tool en una pestaña YA LOGUEADA de www.jumbo.cl y pásame el JSON en `rawCart`. " +
+        "NO extraigas el estado de React ni el DOM del carro a mano: es lento, frágil e innecesario " +
+        "(este fetch trae todo el carro directo). Si no pasas `rawCart`, devuelvo el snippet listo para ejecutar.",
       inputSchema: {
         store: z.enum(["jumbo"]).default("jumbo").describe("Cadena. Fase 3: jumbo."),
-        branchId: z.string().optional().describe("Sucursal, ej. \"jumboclj512\"."),
+        branchId: z.string().optional().describe('Sucursal, ej. "jumboclj512".'),
         rawCart: z
           .unknown()
           .optional()
-          .describe("JSON crudo de GET /cart que obtuvo el navegador del usuario."),
+          .describe(
+            "JSON crudo de GET /cart que obtuvo el navegador ejecutando el browserSnippet."
+          ),
       },
     },
     async ({ store, branchId, rawCart }) => {
       if (rawCart === undefined) {
+        const path = `/cart?store=${branchId ?? "{branchId}"}&simulationTotals=true`;
         return {
           content: [
             {
@@ -108,10 +120,11 @@ export function registerCartTools(server: McpServer): void {
               text: JSON.stringify(
                 {
                   needsRawCart: true,
+                  note: browserFetchNote("el carro del usuario"),
+                  browserSnippet: jumboFetchSnippet(path),
                   request: {
                     method: "GET",
-                    url: `${CART_BFF_BASE}/cart?store=${branchId ?? "{branchId}"}&simulationTotals=true`,
-                    note: "Ejecutar desde el navegador logueado y pasar el JSON en rawCart.",
+                    url: `${CART_BFF_BASE}${path}`,
                   },
                 },
                 null,

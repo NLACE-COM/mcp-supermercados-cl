@@ -59,7 +59,9 @@ describe("UnimarcAdapter · mapProduct", () => {
     const products = await new UnimarcAdapter(http).searchProducts("detergente", {
       limit: 49,
     });
-    expect(seenUrl).toContain("bff-unimarc-ecommerce.unimarc.cl/catalog/product/search");
+    expect(seenUrl).toContain(
+      "bff-unimarc-ecommerce.unimarc.cl/catalog/product/search"
+    );
     expect(seenBody).toMatchObject({
       searching: "detergente",
       from: "0",

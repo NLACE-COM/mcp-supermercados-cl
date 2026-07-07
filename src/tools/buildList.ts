@@ -12,13 +12,13 @@ export function registerBuildList(server: McpServer): void {
     {
       title: "Armar lista de compra",
       description:
-        "Convierte una lista en lenguaje natural (ej. [\"leche\", \"arroz 1kg\", \"café de grano\"]) en productos " +
+        'Convierte una lista en lenguaje natural (ej. ["leche", "arroz 1kg", "café de grano"]) en productos ' +
         "concretos del catálogo, eligiendo por mejor precio por unidad y ofertas vigentes. Devuelve por ítem el " +
         "producto elegido, hasta 3 alternativas para ajustar, el ahorro por ofertas, y el total estimado en CLP. " +
         "Con `branchId` usa precios/stock de esa sucursal. " +
         "Si se entregan los productos frecuentes del usuario en `frequentCards` (desde get_frequent_purchases " +
         "con sesión iniciada), se priorizan: la lista se arma con lo que la persona realmente compra. " +
-        "Si el usuario prefiere marcas específicas, incluirlas en el texto del ítem (ej. \"leche colun\").",
+        'Si el usuario prefiere marcas específicas, incluirlas en el texto del ítem (ej. "leche colun").',
       inputSchema: {
         store: z
           .enum(["jumbo", "santaisabel", "unimarc", "tottus", "lider"])
@@ -32,11 +32,13 @@ export function registerBuildList(server: McpServer): void {
         branchId: z
           .string()
           .optional()
-          .describe("Código de sucursal para precios locales, ej. \"jumboclj512\"."),
+          .describe('Código de sucursal para precios locales, ej. "jumboclj512".'),
         onlyOffers: z
           .boolean()
           .default(false)
-          .describe("true = arma la lista solo con productos en oferta (con descuento)."),
+          .describe(
+            "true = arma la lista solo con productos en oferta (con descuento)."
+          ),
         onlyInStock: z
           .boolean()
           .default(false)

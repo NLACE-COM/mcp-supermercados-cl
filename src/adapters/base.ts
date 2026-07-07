@@ -40,9 +40,7 @@ export interface StoreAdapter {
 
 export class NotImplementedError extends Error {
   constructor(adapter: StoreId, method: string, phase: string) {
-    super(
-      `${adapter}.${method} aún no está implementado (llega en la ${phase}).`
-    );
+    super(`${adapter}.${method} aún no está implementado (llega en la ${phase}).`);
     this.name = "NotImplementedError";
   }
 }

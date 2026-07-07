@@ -1,0 +1,41 @@
+name: 💡 Idea o mejora
+description: Proponer una cadena nueva, una capacidad o una mejora.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué problema resuelve?
+      description: El "para qué" antes que el "cómo".
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+      description: Qué te imaginas. Si es una cadena/farmacia nueva, indica cuál y su sitio.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Nueva cadena o farmacia
+        - Carro / sesión en Unimarc, Tottus o Lider
+        - Detalle de producto (get_product) en más cadenas
+        - Calidad del matching / búsqueda
+        - Rendimiento
+        - Otra
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: ¿Te gustaría implementarlo?
+      options:
+        - label: Puedo mandar un PR con ayuda
+        - label: Prefiero que lo tome alguien más

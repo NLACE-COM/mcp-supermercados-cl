@@ -74,8 +74,8 @@ describe("CencosudAdapter · getSavedLists", () => {
   });
 
   it("sin material de sesión explica cómo habilitarlo", async () => {
-    await expect(
-      adapter.getSavedLists({ store: "jumbo" })
-    ).rejects.toThrow(/savedListsRaw|localStorage/);
+    await expect(adapter.getSavedLists({ store: "jumbo" })).rejects.toThrow(
+      /savedListsRaw|localStorage/
+    );
   });
 });

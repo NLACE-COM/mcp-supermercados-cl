@@ -9,18 +9,18 @@ con curl. Complementa y actualiza la sección 4 del plan.
 GET https://pwcdauseo-zone.cnstrc.com/search/{query}
 ```
 
-| Param | Valor | Nota |
-|---|---|---|
-| `key` | `key_JopvNXKS61kwGkBe` | Prod jumboCL. Pública, embebida en el frontend |
-| `i` | UUID v4 | Id de cliente persistente (cookie de ciojs). Cualquier UUID funciona |
-| `s` | `1` | Número de sesión del cliente |
-| `c` | `ciojs-2.1436.4` | Versión del cliente JS observada. Opcional |
-| `page` | `1..n` | Base 1 |
-| `num_results_per_page` | `1..~200` | |
-| `sort_by` / `sort_order` | `relevance` / `descending` | Defaults del servidor |
-| `filters[BrandName]` etc. | | Facetas: BrandName, Tipo de Producto, sellingPrice (range), etc. |
-| `variations_map` | JSON (ver §2) | Precios/stock por sucursal |
-| `_dt` | timestamp ms | Cache-buster del cliente oficial |
+| Param                     | Valor                      | Nota                                                                 |
+| ------------------------- | -------------------------- | -------------------------------------------------------------------- |
+| `key`                     | `key_JopvNXKS61kwGkBe`     | Prod jumboCL. Pública, embebida en el frontend                       |
+| `i`                       | UUID v4                    | Id de cliente persistente (cookie de ciojs). Cualquier UUID funciona |
+| `s`                       | `1`                        | Número de sesión del cliente                                         |
+| `c`                       | `ciojs-2.1436.4`           | Versión del cliente JS observada. Opcional                           |
+| `page`                    | `1..n`                     | Base 1                                                               |
+| `num_results_per_page`    | `1..~200`                  |                                                                      |
+| `sort_by` / `sort_order`  | `relevance` / `descending` | Defaults del servidor                                                |
+| `filters[BrandName]` etc. |                            | Facetas: BrandName, Tipo de Producto, sellingPrice (range), etc.     |
+| `variations_map`          | JSON (ver §2)              | Precios/stock por sucursal                                           |
+| `_dt`                     | timestamp ms               | Cache-buster del cliente oficial                                     |
 
 - **Headers**: basta `User-Agent` realista. Sin cookies, sin key privada.
 - La página de búsqueda de jumbo.cl es **SSR**: el navegador no llama a
@@ -29,19 +29,20 @@ GET https://pwcdauseo-zone.cnstrc.com/search/{query}
 - El JS `https://cnstrc.com/js/cust/cencosud_0BmS-e.js` contiene el mapa
   completo de keys por bandera:
 
-| Bandera | prod | qa | dev |
-|---|---|---|---|
-| jumboCL | `key_JopvNXKS61kwGkBe` | `key_DFB3C0u9Wbjq8StU` | `key_9NpwWxusNvJ2Cyhk` |
-| sisaCL (Santa Isabel) | `key_c73M3GMIWJ8AcNnd` | — | — |
-| paris | `key_8pjkPsSkEsJHKgxR` | `key_6PvQHDnR0zdWgEPh` | `key_j7ajk8vvD4T7oNEM` |
-| easyCL | `key_AimxrTjorsjiKQPy` | `key_Vczly9AHgvdrtulj` | `key_tUrIQxBOU2aGAGad` |
-| jumboCO | `key_MiR4ElROwyAwJxlr` | — | — |
-| wongPE / metroPE | `key_FxY3WjZjKWp9ZgIy` / `key_Yz1sWCvhXgmmrPpo` | — | — |
+| Bandera               | prod                                            | qa                     | dev                    |
+| --------------------- | ----------------------------------------------- | ---------------------- | ---------------------- |
+| jumboCL               | `key_JopvNXKS61kwGkBe`                          | `key_DFB3C0u9Wbjq8StU` | `key_9NpwWxusNvJ2Cyhk` |
+| sisaCL (Santa Isabel) | `key_c73M3GMIWJ8AcNnd`                          | —                      | —                      |
+| paris                 | `key_8pjkPsSkEsJHKgxR`                          | `key_6PvQHDnR0zdWgEPh` | `key_j7ajk8vvD4T7oNEM` |
+| easyCL                | `key_AimxrTjorsjiKQPy`                          | `key_Vczly9AHgvdrtulj` | `key_tUrIQxBOU2aGAGad` |
+| jumboCO               | `key_MiR4ElROwyAwJxlr`                          | —                      | —                      |
+| wongPE / metroPE      | `key_FxY3WjZjKWp9ZgIy` / `key_Yz1sWCvhXgmmrPpo` | —                      | —                      |
 
 ⚠️ La key de Santa Isabel **no responde** en `pwcdauseo-zone.cnstrc.com`.
 **Actualización 2026-07-07**: responde en el host estándar `ac.cnstrc.com`
 con la misma forma de payload (SkuData, sellingPrice, etc.). Diferencias
 encontradas para fase 4:
+
 - Las URLs de producto apuntan a `www.sisa.cl` (redirigen a santaisabel.cl).
 - La respuesta de búsqueda probada no trajo `variations[]` por tienda.
 - El PDP de santaisabel.cl NO usa el estado React Query de Jumbo: embebe
@@ -69,11 +70,11 @@ sobre `data.storeId`:
 {
   "group_by": [{ "name": "variation", "field": "data.variation_id" }],
   "values": {
-    "price":        { "aggregation": "min",   "field": "data.price" },
-    "sellingPrice": { "aggregation": "min",   "field": "data.sellingPrice" },
-    "listPrice":    { "aggregation": "min",   "field": "data.listPrice" },
-    "stockLevel":   { "aggregation": "first", "field": "data.stockLevel" },
-    "storeId":      { "aggregation": "first", "field": "data.storeId" }
+    "price": { "aggregation": "min", "field": "data.price" },
+    "sellingPrice": { "aggregation": "min", "field": "data.sellingPrice" },
+    "listPrice": { "aggregation": "min", "field": "data.listPrice" },
+    "stockLevel": { "aggregation": "first", "field": "data.stockLevel" },
+    "storeId": { "aggregation": "first", "field": "data.storeId" }
   },
   "dtype": "array",
   "filter_by": { "and": [{ "field": "data.storeId", "value": "jumboclj512" }] }
@@ -156,6 +157,7 @@ Con sesión iniciada del usuario (sin que el MCP toque credenciales):
 ## 4d. Santa Isabel: detalle y listas (mejoras, 2026-07-07)
 
 **Detalle** (equivalente a la PDP de Jumbo, distinto transporte):
+
 ```
 POST https://bff.santaisabel.cl/catalog/pdp
 apiKey: be-reg-groceries-sisa-catalog-wdhhq5a2fken   (pública, del frontend)
@@ -164,6 +166,7 @@ x-client-version: 2.3.17
 x-trace-id: <uuid por request>
 body: {"slug":"{slug}","store":"{sucursal}"}   (ej. store "pedrofontova")
 ```
+
 La respuesta trae `items[]` con la **misma forma que Jumbo** (`price`,
 `listPrice`, `ppumPrice`, `ppumMeasurementUnit`, `ean`, `stock`,
 `promotions[]` con `userProperties` para el precio socio). Acepta el slug con
@@ -173,11 +176,13 @@ usa la del default. Por eso el `CencosudBannerConfig` gana `pdpStyle:"bff-pdp"`
 y el adaptador comparte `mapPdpData` entre Jumbo (estado deshidratado) y SI.
 
 **Listas guardadas de Jumbo** (fase 2):
+
 ```
 GET /lists?store={branchId}                        (listas del usuario)
 GET /lists/inspiration-list?perPage=5&page=1&...   (sugeridas)
 GET /lists/{scope}/{idList}?store={branchId}       (detalle con items)
 ```
+
 Cada lista: `{idList, name, description, items[], isFavorite}`. Cada item:
 `{idItem, name, price, listPrice, quantity, promotions[], stock,
 measurementUnit, unitMultiplier}` — el precio socio en `promotions[]` con
@@ -199,10 +204,23 @@ PATCH /cart/items                                     → agregar/actualizar
   el navegador del usuario.
 - **Body de PATCH /cart/items** (verificado):
   ```json
-  {"items":[{"skuId":"92628","quantity":3,"isUnitary":false,"giftable":false,
-    "itemQuantityLimit":18,"isUnitaryEligible":false,"sponsoredId":null,
-    "measurementUnitUn":"kg","unitMultiplierUn":1,"soldBy":"Jumbo"}],
-   "store":"jumboclj512"}
+  {
+    "items": [
+      {
+        "skuId": "92628",
+        "quantity": 3,
+        "isUnitary": false,
+        "giftable": false,
+        "itemQuantityLimit": 18,
+        "isUnitaryEligible": false,
+        "sponsoredId": null,
+        "measurementUnitUn": "kg",
+        "unitMultiplierUn": 1,
+        "soldBy": "Jumbo"
+      }
+    ],
+    "store": "jumboclj512"
+  }
   ```
   quantity=0 (o el botón basurero en la UI) elimina la línea.
 - **Respuesta de GET /cart**: `{ items[], itemsQuantity, totals, simulation }`.

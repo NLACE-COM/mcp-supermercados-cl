@@ -16,10 +16,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "..", "fixture
 const searchFixture = JSON.parse(
   readFileSync(join(fixturesDir, "constructor-search-arroz.json"), "utf-8")
 );
-const pdpFixture = readFileSync(
-  join(fixturesDir, "pdp-arroz-banquete.html"),
-  "utf-8"
-);
+const pdpFixture = readFileSync(join(fixturesDir, "pdp-arroz-banquete.html"), "utf-8");
 const offersFixture = JSON.parse(
   readFileSync(join(fixturesDir, "constructor-browse-ofertas.json"), "utf-8")
 );

@@ -49,10 +49,7 @@ interface RawCart {
 }
 
 /** Item del carro -> Product normalizado (precio vigente + Prime separado). */
-export function cartItemToProduct(
-  raw: RawCartItem,
-  store: StoreId
-): Product | null {
+export function cartItemToProduct(raw: RawCartItem, store: StoreId): Product | null {
   const id = raw.skuId ?? raw.productId;
   if (!id || !raw.name) return null;
 
@@ -62,9 +59,7 @@ export function cartItemToProduct(
   if (listPrice !== undefined && listPrice <= price) listPrice = undefined;
 
   // Precio socio: promo PRIME_USER (aplicada o no, es el precio que pagaría).
-  const primePromo = raw.promotions?.find(
-    (p) => p.userProperties === "PRIME_USER"
-  );
+  const primePromo = raw.promotions?.find((p) => p.userProperties === "PRIME_USER");
   const memberPrice = toClp(primePromo?.unitPrice);
 
   const unit = raw.measurementUnitUn;
@@ -95,15 +90,13 @@ export function parseCart(raw: unknown, store: StoreId): Cart {
       const product = cartItemToProduct(it, store);
       if (!product) return null;
       const quantity = Math.max(1, Math.round(it.quantity ?? 1));
-      const lineTotal =
-        toClp(it.prices?.totalPrice) ?? product.price * quantity;
+      const lineTotal = toClp(it.prices?.totalPrice) ?? product.price * quantity;
       return { product, quantity, lineTotal };
     })
     .filter((l): l is CartLine => l !== null);
 
   const subTotal = toClp(cart.totals?.subTotal) ?? sumListPrices(rawItems);
-  const total =
-    toClp(cart.totals?.total) ?? items.reduce((s, l) => s + l.lineTotal, 0);
+  const total = toClp(cart.totals?.total) ?? items.reduce((s, l) => s + l.lineTotal, 0);
   const savings = Math.max(0, subTotal - total);
 
   // Ahorro Prime: magnitud del descuento con key PRIME_USER (viene negativo).
@@ -115,8 +108,7 @@ export function parseCart(raw: unknown, store: StoreId): Cart {
       ? Math.abs(Math.round(primeDetail.value))
       : undefined;
 
-  const itemsQuantity =
-    cart.itemsQuantity ?? items.reduce((s, l) => s + l.quantity, 0);
+  const itemsQuantity = cart.itemsQuantity ?? items.reduce((s, l) => s + l.quantity, 0);
 
   return {
     store,
@@ -163,8 +155,7 @@ export function buildCartPatchBody(
 }
 
 /** Endpoint del BFF de Jumbo para leer/mutar el carro. */
-export const CART_BFF_BASE =
-  "https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com";
+export const CART_BFF_BASE = "https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com";
 
 function sumListPrices(items: RawCartItem[]): number {
   return items.reduce((s, it) => {

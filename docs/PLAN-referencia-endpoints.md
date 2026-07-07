@@ -89,13 +89,13 @@ Ambos sitios comparten backend. Un solo adaptador cubre las dos cadenas.
 
 ### 2.5 Resumen de estrategia por cadena
 
-| Cadena | Estrategia primaria | Fallback | Riesgo |
-|---|---|---|---|
-| Jumbo | Constructor.io HTTP directo | SSR parsing | Bajo |
-| Santa Isabel | Constructor.io HTTP directo (key propia) | SSR parsing | Bajo |
-| Tottus | Fetch SSR + `__NEXT_DATA__` | Playwright | Bajo |
-| Unimarc | API VTEX (validar) | Playwright + `__NEXT_DATA__` | Medio |
-| Lider | Playwright + intercepción GraphQL | Parsing DOM | Alto (PerimeterX) |
+| Cadena       | Estrategia primaria                      | Fallback                     | Riesgo            |
+| ------------ | ---------------------------------------- | ---------------------------- | ----------------- |
+| Jumbo        | Constructor.io HTTP directo              | SSR parsing                  | Bajo              |
+| Santa Isabel | Constructor.io HTTP directo (key propia) | SSR parsing                  | Bajo              |
+| Tottus       | Fetch SSR + `__NEXT_DATA__`              | Playwright                   | Bajo              |
+| Unimarc      | API VTEX (validar)                       | Playwright + `__NEXT_DATA__` | Medio             |
+| Lider        | Playwright + intercepción GraphQL        | Parsing DOM                  | Alto (PerimeterX) |
 
 ---
 
@@ -136,11 +136,11 @@ supermercado-mcp/
 - Interface del adaptador:
   ```ts
   interface StoreAdapter {
-    id: StoreId;                       // 'jumbo' | 'santa_isabel' | 'lider' | 'tottus' | 'unimarc'
+    id: StoreId; // 'jumbo' | 'santa_isabel' | 'lider' | 'tottus' | 'unimarc'
     search(query: string, opts: SearchOpts): Promise<Product[]>;
     getProduct?(id: string): Promise<Product>;
     getOffers?(category?: string): Promise<Product[]>;
-    health(): Promise<AdapterHealth>;  // para diagnóstico
+    health(): Promise<AdapterHealth>; // para diagnóstico
   }
   ```
 - Esquema normalizado (zod, el corazón del proyecto):
@@ -150,16 +150,16 @@ supermercado-mcp/
     id: z.string(),
     name: z.string(),
     brand: z.string().nullable(),
-    price: z.number(),                 // CLP, precio vigente
-    listPrice: z.number().nullable(),  // precio sin descuento
-    unitPrice: z.number().nullable(),  // CLP por unidad base
-    unitLabel: z.string().nullable(),  // 'kg' | 'lt' | 'un'
-    promo: z.string().nullable(),      // '2 x $3.000', 'Club Unimarc', etc.
-    memberPrice: z.number().nullable(),// precio con tarjeta/club
+    price: z.number(), // CLP, precio vigente
+    listPrice: z.number().nullable(), // precio sin descuento
+    unitPrice: z.number().nullable(), // CLP por unidad base
+    unitLabel: z.string().nullable(), // 'kg' | 'lt' | 'un'
+    promo: z.string().nullable(), // '2 x $3.000', 'Club Unimarc', etc.
+    memberPrice: z.number().nullable(), // precio con tarjeta/club
     inStock: z.boolean().nullable(),
     imageUrl: z.string().nullable(),
     productUrl: z.string(),
-    fetchedAt: z.string(),             // ISO timestamp
+    fetchedAt: z.string(), // ISO timestamp
   });
   ```
 - Rate limiting: máximo 1 request por segundo por dominio, con jitter. Cache de 15 minutos por query. Esto mantiene el tráfico a ritmo humano.
@@ -169,14 +169,14 @@ supermercado-mcp/
 
 ## 4. Tools MCP (v1)
 
-| Tool | Parámetros | Descripción |
-|---|---|---|
-| `search_products` | `query`, `stores?`, `limit?`, `sort?` | Busca en una o varias cadenas. Default: todas las disponibles. |
-| `compare_prices` | `query`, `stores?` | Busca en todas, matchea productos equivalentes (marca + formato) y devuelve tabla comparativa con precio y precio por unidad. |
-| `get_offers` | `store`, `category?` | Productos con descuento activo. |
-| `get_product` | `store`, `id` | Detalle de un producto. |
-| `build_list` | `items: {query, quantity}[]`, `optimize?: 'single_store' \| 'cheapest_mix'` | Arma lista de compra: mejor tienda única o mix más barato, con total estimado por escenario. |
-| `adapter_status` | — | Diagnóstico: qué cadenas responden ahora. |
+| Tool              | Parámetros                                                                  | Descripción                                                                                                                   |
+| ----------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `search_products` | `query`, `stores?`, `limit?`, `sort?`                                       | Busca en una o varias cadenas. Default: todas las disponibles.                                                                |
+| `compare_prices`  | `query`, `stores?`                                                          | Busca en todas, matchea productos equivalentes (marca + formato) y devuelve tabla comparativa con precio y precio por unidad. |
+| `get_offers`      | `store`, `category?`                                                        | Productos con descuento activo.                                                                                               |
+| `get_product`     | `store`, `id`                                                               | Detalle de un producto.                                                                                                       |
+| `build_list`      | `items: {query, quantity}[]`, `optimize?: 'single_store' \| 'cheapest_mix'` | Arma lista de compra: mejor tienda única o mix más barato, con total estimado por escenario.                                  |
+| `adapter_status`  | —                                                                           | Diagnóstico: qué cadenas responden ahora.                                                                                     |
 
 Notas de diseño para el matching de `compare_prices`: normalizar texto (tildes, mayúsculas), extraer formato con regex (`1 kg`, `1 lt`, `x12`), comparar por precio por unidad cuando el formato difiere. No pretender matching perfecto en v1: devolver candidatos con score y dejar el juicio al LLM, es su fortaleza.
 
@@ -213,6 +213,6 @@ README con GIF de demo, licencia MIT, disclaimer legal, publicación npm, post d
 
 ## 7. Riesgos y mitigaciones
 
-| Riesgo | Mitigación |
-|---|---|
-| ToS prohíben acceso automatizado | Proyecto local por usuario, a ritmo humano, sin redistribución de datos 
+| Riesgo                           | Mitigación                                                              |
+| -------------------------------- | ----------------------------------------------------------------------- |
+| ToS prohíben acceso automatizado | Proyecto local por usuario, a ritmo humano, sin redistribución de datos |

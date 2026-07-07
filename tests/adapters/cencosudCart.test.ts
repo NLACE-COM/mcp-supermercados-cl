@@ -106,10 +106,11 @@ describe("CencosudAdapter · carro (puente de sesión)", () => {
 
   it("addToCart manda skuId+quantity al puente y devuelve el carro", async () => {
     const bridge = fakeBridge();
-    const cart = await adapter.addToCart(
-      [{ productId: "92628", quantity: 2 }],
-      { store: "jumbo", branchId: "jumboclj512", cartBridge: bridge }
-    );
+    const cart = await adapter.addToCart([{ productId: "92628", quantity: 2 }], {
+      store: "jumbo",
+      branchId: "jumboclj512",
+      cartBridge: bridge,
+    });
     expect(bridge.patched).toHaveLength(1);
     expect((bridge.patched[0] as any)[0]).toEqual({ skuId: "92628", quantity: 2 });
     CartSchema.parse(cart);

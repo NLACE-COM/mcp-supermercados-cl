@@ -71,7 +71,8 @@ export class TottusAdapter implements StoreAdapter {
 
     const internet = p.prices?.find((x) => x.type === "internetPrice");
     const normal = p.prices?.find((x) => x.type === "normalPrice" || x.crossed);
-    const price = parseClpString(internet?.price?.[0]) ?? parseClpString(p.prices?.[0]?.price?.[0]);
+    const price =
+      parseClpString(internet?.price?.[0]) ?? parseClpString(p.prices?.[0]?.price?.[0]);
     if (price === undefined) return null;
 
     let listPrice = parseClpString(normal?.price?.[0]);
@@ -100,7 +101,9 @@ export class TottusAdapter implements StoreAdapter {
             : {}),
         };
       })
-      .filter((b): b is NonNullable<typeof b> => b !== undefined && b.type === "bundle");
+      .filter(
+        (b): b is NonNullable<typeof b> => b !== undefined && b.type === "bundle"
+      );
 
     return {
       store: this.id,

@@ -36,9 +36,13 @@ describe("LiderAdapter · mapProduct", () => {
   });
 
   it("searchProducts extrae del __NEXT_DATA__ SSR", async () => {
-    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify(
-      { props: { pageProps: { initialData: { searchResult: { itemStacks: [{ items: fixture.products }] } } } } }
-    )}</script>`;
+    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: {
+        pageProps: {
+          initialData: { searchResult: { itemStacks: [{ items: fixture.products }] } },
+        },
+      },
+    })}</script>`;
     const http: HttpFetcher = {
       async getText(url: string) {
         expect(url).toContain("super.lider.cl/search?query=arroz");
@@ -57,9 +61,9 @@ describe("LiderAdapter · mapProduct", () => {
   });
 
   it("usa el puente de navegador de la sesión si está presente", async () => {
-    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify(
-      { a: { items: fixture.products } }
-    )}</script>`;
+    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      a: { items: fixture.products },
+    })}</script>`;
     let bridged = false;
     const http: HttpFetcher = {
       async getText(): Promise<string> {
@@ -88,9 +92,9 @@ describe("LiderAdapter · mapProduct", () => {
 
 describe("extractLiderProducts", () => {
   it("encuentra el arreglo de Product en un árbol anidado", () => {
-    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify(
-      { deep: { nested: { items: fixture.products } } }
-    )}</script>`;
+    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      deep: { nested: { items: fixture.products } },
+    })}</script>`;
     expect(extractLiderProducts(html)).toHaveLength(3);
   });
 

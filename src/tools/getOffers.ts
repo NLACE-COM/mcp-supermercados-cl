@@ -9,18 +9,20 @@ export function registerGetOffers(server: McpServer): void {
       title: "Ofertas vigentes",
       description:
         "Lista las ofertas vigentes del supermercado (precio rebajado: `price` vigente vs `listPrice` normal). " +
-        "Filtrable por categoría (ej. \"Despensa\", \"Lácteos\") y por sucursal (`branchId`). " +
+        'Filtrable por categoría (ej. "Despensa", "Lácteos") y por sucursal (`branchId`). ' +
         "Con `primeOnly` devuelve las ofertas exclusivas para socios Jumbo Prime " +
         "(el monto exacto del precio socio se consulta con get_product).",
       inputSchema: {
         store: z
           .enum(["jumbo", "santaisabel"])
           .default("jumbo")
-          .describe("Cadena. jumbo (colecciones verificadas). santaisabel: aún sin colección de ofertas."),
+          .describe(
+            "Cadena. jumbo (colecciones verificadas). santaisabel: aún sin colección de ofertas."
+          ),
         category: z
           .string()
           .optional()
-          .describe("Categoría para filtrar, ej. \"Despensa\". Omitir para todas."),
+          .describe('Categoría para filtrar, ej. "Despensa". Omitir para todas.'),
         limit: z
           .number()
           .int()
@@ -32,7 +34,7 @@ export function registerGetOffers(server: McpServer): void {
         branchId: z
           .string()
           .optional()
-          .describe("Código de sucursal para precios locales, ej. \"jumboclj512\"."),
+          .describe('Código de sucursal para precios locales, ej. "jumboclj512".'),
         primeOnly: z
           .boolean()
           .default(false)
@@ -54,7 +56,13 @@ export function registerGetOffers(server: McpServer): void {
             {
               type: "text",
               text: JSON.stringify(
-                { store, category: category ?? null, primeOnly, count: products.length, products },
+                {
+                  store,
+                  category: category ?? null,
+                  primeOnly,
+                  count: products.length,
+                  products,
+                },
                 null,
                 2
               ),

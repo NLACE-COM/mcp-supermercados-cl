@@ -57,7 +57,7 @@ de recaptura.
 
 - TypeScript estricto. Comentarios y textos de cara al usuario en español;
   identificadores en inglés.
-- Comenta el *porqué* (una constraint, un endpoint verificado), no el *qué*.
+- Comenta el _porqué_ (una constraint, un endpoint verificado), no el _qué_.
 
 ## Reporte de bugs
 

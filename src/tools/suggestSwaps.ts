@@ -25,12 +25,12 @@ export function registerSuggestSwaps(server: McpServer): void {
           .min(1)
           .max(20)
           .describe(
-            "Productos a optimizar, por nombre (ej. \"Arroz Grado 1 Tucapel 1 kg\") o búsqueda (\"arroz\")."
+            'Productos a optimizar, por nombre (ej. "Arroz Grado 1 Tucapel 1 kg") o búsqueda ("arroz").'
           ),
         branchId: z
           .string()
           .optional()
-          .describe("Código de sucursal para precios locales, ej. \"jumboclj512\"."),
+          .describe('Código de sucursal para precios locales, ej. "jumboclj512".'),
         preferNatural: z
           .boolean()
           .default(false)

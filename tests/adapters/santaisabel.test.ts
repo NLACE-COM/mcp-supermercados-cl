@@ -2,10 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import {
-  CencosudAdapter,
-  SANTA_ISABEL_CONFIG,
-} from "../../src/adapters/cencosud.js";
+import { CencosudAdapter, SANTA_ISABEL_CONFIG } from "../../src/adapters/cencosud.js";
 import { ProductSchema } from "../../src/core/types.js";
 import type { HttpFetcher } from "../../src/http/client.js";
 
@@ -133,9 +130,7 @@ describe("Santa Isabel · detalle vía BFF (POST /catalog/pdp)", () => {
 
   it("getOffers explica que no hay colección para el banner", async () => {
     const adapter = new CencosudAdapter(SANTA_ISABEL_CONFIG);
-    await expect(adapter.getOffers()).rejects.toThrow(
-      /no está disponible|colección/
-    );
+    await expect(adapter.getOffers()).rejects.toThrow(/no está disponible|colección/);
   });
 });
 

@@ -14,13 +14,13 @@ Consecuencia de diseño: la sesión con login deja de ser una fase tardía y pas
 
 ## 2. Hallazgo clave: son cuatro plataformas, no cinco
 
-| Cadena | Plataforma | Backend de búsqueda | Dificultad |
-|---|---|---|---|
-| Jumbo | Cencosud e-commerce | Constructor.io + API propia Cencosud | Baja |
-| Santa Isabel | Cencosud e-commerce | Constructor.io + API propia Cencosud | Baja (mismo adaptador que Jumbo) |
-| Unimarc | VTEX IO | VTEX Intelligent Search | Media |
-| Tottus | Falabella (Next.js SSR) | API de catálogo Falabella | Media |
-| Lider | Walmart Glass | GraphQL orchestra | Alta (antibots PerimeterX) |
+| Cadena       | Plataforma              | Backend de búsqueda                  | Dificultad                       |
+| ------------ | ----------------------- | ------------------------------------ | -------------------------------- |
+| Jumbo        | Cencosud e-commerce     | Constructor.io + API propia Cencosud | Baja                             |
+| Santa Isabel | Cencosud e-commerce     | Constructor.io + API propia Cencosud | Baja (mismo adaptador que Jumbo) |
+| Unimarc      | VTEX IO                 | VTEX Intelligent Search              | Media                            |
+| Tottus       | Falabella (Next.js SSR) | API de catálogo Falabella            | Media                            |
+| Lider        | Walmart Glass           | GraphQL orchestra                    | Alta (antibots PerimeterX)       |
 
 Con un solo adaptador Cencosud cubres dos cadenas. Como el foco es profundidad en una cadena, se lleva una hasta el final (búsqueda, sesión, precio club, historial, carro) antes de sumar la siguiente. Se parte por Jumbo, que es el caso propio del usuario, y el adaptador Cencosud queda listo para Santa Isabel casi gratis.
 
@@ -66,7 +66,7 @@ La sesión es un parámetro de primera clase, no un añadido tardío. Casi todo 
 
 ```ts
 interface StoreAdapter {
-  id: StoreId;                    // "jumbo" | "santaisabel" | "unimarc" | "tottus" | "lider"
+  id: StoreId; // "jumbo" | "santaisabel" | "unimarc" | "tottus" | "lider"
 
   // lectura pública (sin sesión):
   searchProducts(query: string, opts: SearchOpts): Promise<Product[]>;
@@ -76,7 +76,7 @@ interface StoreAdapter {
   // con sesión del usuario, núcleo del producto:
   getFrequentPurchases(session: Session): Promise<Product[]>;
   getSavedLists(session: Session): Promise<ShoppingList[]>;
-  getMemberPrice(id: string, session: Session): Promise<Price>;   // precio club / RUT
+  getMemberPrice(id: string, session: Session): Promise<Price>; // precio club / RUT
   addToCart(items: CartItem[], session: Session): Promise<Cart>;
   getCart(session: Session): Promise<Cart>;
 }
@@ -93,14 +93,14 @@ type Product = {
   sku?: string;
   name: string;
   brand?: string;
-  price: number;               // precio actual en CLP
-  listPrice?: number;          // precio lista si hay descuento
-  pricePerUnit?: number;       // precio por kg/lt para comparar
-  unit?: string;               // "kg" | "lt" | "un"
+  price: number; // precio actual en CLP
+  listPrice?: number; // precio lista si hay descuento
+  pricePerUnit?: number; // precio por kg/lt para comparar
+  unit?: string; // "kg" | "lt" | "un"
   offer?: {
-    type: string;              // "descuento" | "2x1" | "club" | etc
+    type: string; // "descuento" | "2x1" | "club" | etc
     description?: string;
-    clubOnly?: boolean;        // precio socio (Jumbo Prime, Club Unimarc, etc)
+    clubOnly?: boolean; // precio socio (Jumbo Prime, Club Unimarc, etc)
   };
   inStock: boolean;
   imageUrl?: string;
@@ -127,6 +127,7 @@ GET https://pwcdauseo-zone.cnstrc.com/search/{query}
 ```
 
 Notas Cencosud:
+
 - El `key` de Constructor.io es el mismo para Jumbo (capturado). Santa Isabel usa el mismo backend Cencosud; verificar si comparte key o tiene el suyo.
 - API propia Cencosud confirmada para ratings: `https://sm-web-api.ecomm.cencosud.com/catalog/api/v1/reviews/ratings?ids=...`. La misma base `sm-web-api.ecomm.cencosud.com/catalog/api/...` probablemente sirve detalle de producto y precios por tienda. Mapear en Claude Code.
 - El precio depende de la tienda o comuna seleccionada. Hay que fijar sucursal o región en las requests.
@@ -142,6 +143,7 @@ GET https://www.unimarc.cl/api/io/_v/api/intelligent-search/product_search
 ```
 
 Fallback VTEX clásico (verificar cuál responde):
+
 ```
 GET https://www.unimarc.cl/api/catalog_system/pub/products/search/{query}?_from=0&_to=N
 ```
@@ -167,6 +169,7 @@ GET  https://super.lider.cl/orchestra/api/ccm/v3/bootstrap?configNames=...
 ```
 
 Notas Lider:
+
 - Es la plataforma Glass de Walmart, la misma de walmart.com. Hay documentación comunitaria del esquema GraphQL.
 - Protección antibots más agresiva del grupo (PerimeterX). Requests directos serán bloqueados. Aquí probablemente hay que usar Playwright reusando la sesión del navegador del usuario, no fetch plano.
 - Requiere fijar modo de entrega y dirección antes de ver precios (retiro pickup o despacho, con comuna).
@@ -178,27 +181,27 @@ Ordenadas por el foco real: armar la mejor lista dentro de una cadena, con la se
 
 Núcleo (con sesión, es el corazón del producto):
 
-| Tool | Input | Descripción |
-|---|---|---|
-| `build_list` | `store`, `items[]` (texto libre, ej "leche, arroz, café") | Convierte una lista en lenguaje natural en productos concretos del catálogo, priorizando lo que el usuario ya compra, aplicando precio club y ofertas vigentes. La tool central |
-| `get_frequent_purchases` | `store` | Productos frecuentes del usuario, base para reordenar rápido |
-| `get_saved_lists` | `store` | Listas guardadas del usuario en la cadena |
-| `suggest_swaps` | `store`, `items[]` | Reemplazos más convenientes dentro del mismo catálogo: misma categoría, mejor precio por unidad o mejor oferta para ese usuario |
-| `add_to_cart` | `store`, `items[]` | Deja la lista lista en el carro para pagar |
-| `get_cart` | `store` | Estado del carro |
+| Tool                     | Input                                                     | Descripción                                                                                                                                                                     |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build_list`             | `store`, `items[]` (texto libre, ej "leche, arroz, café") | Convierte una lista en lenguaje natural en productos concretos del catálogo, priorizando lo que el usuario ya compra, aplicando precio club y ofertas vigentes. La tool central |
+| `get_frequent_purchases` | `store`                                                   | Productos frecuentes del usuario, base para reordenar rápido                                                                                                                    |
+| `get_saved_lists`        | `store`                                                   | Listas guardadas del usuario en la cadena                                                                                                                                       |
+| `suggest_swaps`          | `store`, `items[]`                                        | Reemplazos más convenientes dentro del mismo catálogo: misma categoría, mejor precio por unidad o mejor oferta para ese usuario                                                 |
+| `add_to_cart`            | `store`, `items[]`                                        | Deja la lista lista en el carro para pagar                                                                                                                                      |
+| `get_cart`               | `store`                                                   | Estado del carro                                                                                                                                                                |
 
 Lectura de catálogo (soporte, con o sin sesión):
 
-| Tool | Input | Descripción |
-|---|---|---|
-| `search_products` | `store`, `query`, `limit` | Busca en una cadena, con precio del usuario si hay sesión |
-| `get_product` | `store`, `id` | Detalle: precio normal, precio club, precio por unidad, stock, oferta |
-| `get_offers` | `store`, `category?` | Ofertas vigentes, filtrables por lo que el usuario compra |
+| Tool              | Input                     | Descripción                                                           |
+| ----------------- | ------------------------- | --------------------------------------------------------------------- |
+| `search_products` | `store`, `query`, `limit` | Busca en una cadena, con precio del usuario si hay sesión             |
+| `get_product`     | `store`, `id`             | Detalle: precio normal, precio club, precio por unidad, stock, oferta |
+| `get_offers`      | `store`, `category?`      | Ofertas vigentes, filtrables por lo que el usuario compra             |
 
 Comparación entre cadenas (secundaria):
 
-| Tool | Input | Descripción |
-|---|---|---|
+| Tool             | Input                 | Descripción                                                                                    |
+| ---------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
 | `compare_stores` | `items[]`, `stores[]` | Estima el total de la misma lista en varias cadenas. Útil de vez en cuando, no el flujo diario |
 
 ### Lógica de `build_list`
@@ -222,13 +225,13 @@ Esto también resuelve el mayor riesgo legal: no hay un servicio central que scr
 
 ## 7. Riesgos y mitigaciones
 
-| Riesgo | Mitigación |
-|---|---|
+| Riesgo                                       | Mitigación                                                                                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Términos de uso prohíben acceso automatizado | Revisar T&C de cada cadena antes de publicar. MCP 100% local, ritmo humano, sin reventa de datos. Publicar como herramienta personal, no como servicio |
-| Endpoints cambian sin aviso | Adaptadores aislados, tests de contrato por cadena, versión de esquema. Un cambio rompe un adaptador, no todo |
-| Bloqueo antibots (sobre todo Lider) | Rate limiting, user-agent realista, backoff. Para Lider usar sesión de navegador real vía Playwright |
-| Precios dependen de región o tienda | Parámetro de comuna o sucursal en cada tool. Default configurable por el usuario |
-| Precio club vs precio normal | Capturar ambos en el esquema, exponer los dos al modelo |
+| Endpoints cambian sin aviso                  | Adaptadores aislados, tests de contrato por cadena, versión de esquema. Un cambio rompe un adaptador, no todo                                          |
+| Bloqueo antibots (sobre todo Lider)          | Rate limiting, user-agent realista, backoff. Para Lider usar sesión de navegador real vía Playwright                                                   |
+| Precios dependen de región o tienda          | Parámetro de comuna o sucursal en cada tool. Default configurable por el usuario                                                                       |
+| Precio club vs precio normal                 | Capturar ambos en el esquema, exponer los dos al modelo                                                                                                |
 
 ## 8. Roadmap por fases
 

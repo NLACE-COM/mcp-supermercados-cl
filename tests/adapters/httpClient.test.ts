@@ -49,9 +49,7 @@ describe("HttpClient rate limit", () => {
   });
 
   it("no reintenta un 404 (error definitivo)", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response("", { status: 404 }));
+    const fetchMock = vi.fn().mockResolvedValue(new Response("", { status: 404 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const client = new HttpClient({ maxRetries: 1, jitterMs: 0 });

@@ -60,10 +60,24 @@ describe("buildList", () => {
   it("resuelve ítems, suma total y ahorro por ofertas", async () => {
     const adapter = fakeAdapter({
       leche: [
-        product({ id: "l1", price: 1000, listPrice: 1200, unitPrice: 1000, unit: "lt" }),
+        product({
+          id: "l1",
+          price: 1000,
+          listPrice: 1200,
+          unitPrice: 1000,
+          unit: "lt",
+        }),
         product({ id: "l2", price: 1500, unitPrice: 1500, unit: "lt" }),
       ],
-      arroz: [product({ id: "a1", price: 1790, listPrice: 2440, unitPrice: 1790, unit: "kg" })],
+      arroz: [
+        product({
+          id: "a1",
+          price: 1790,
+          listPrice: 2440,
+          unitPrice: 1790,
+          unit: "kg",
+        }),
+      ],
     });
 
     const result = await buildList(adapter, ["leche", "arroz"]);
@@ -88,8 +102,20 @@ describe("buildList", () => {
 
 describe("matchFrequent", () => {
   const frequent = [
-    product({ id: "f1", name: "Arroz Grado 2 Cuisine & Co 1 kg", price: 1390, unitPrice: 1390, unit: "kg" }),
-    product({ id: "f2", name: "Leche Colun Entera 1 L", price: 1090, unitPrice: 1090, unit: "lt" }),
+    product({
+      id: "f1",
+      name: "Arroz Grado 2 Cuisine & Co 1 kg",
+      price: 1390,
+      unitPrice: 1390,
+      unit: "kg",
+    }),
+    product({
+      id: "f2",
+      name: "Leche Colun Entera 1 L",
+      price: 1090,
+      unitPrice: 1090,
+      unit: "lt",
+    }),
   ];
 
   it("matchea cuando todas las palabras de la query están en el nombre", () => {
@@ -111,12 +137,31 @@ describe("buildList con frecuentes (fase 2)", () => {
   it("prioriza el producto frecuente aunque el buscador rankee otro primero", async () => {
     const adapter = fakeAdapter({
       arroz: [
-        product({ id: "barato", name: "Arroz Marca X 1 kg", price: 990, unitPrice: 990, unit: "kg" }),
-        product({ id: "f1", name: "Arroz Grado 2 Cuisine & Co 1 kg", price: 1390, unitPrice: 1390, unit: "kg" }),
+        product({
+          id: "barato",
+          name: "Arroz Marca X 1 kg",
+          price: 990,
+          unitPrice: 990,
+          unit: "kg",
+        }),
+        product({
+          id: "f1",
+          name: "Arroz Grado 2 Cuisine & Co 1 kg",
+          price: 1390,
+          unitPrice: 1390,
+          unit: "kg",
+        }),
       ],
     });
     const frequentProducts = [
-      product({ id: "f1", name: "Arroz Grado 2 Cuisine & Co 1 kg", price: 1390, unitPrice: 1390, unit: "kg", memberPrice: 1290 }),
+      product({
+        id: "f1",
+        name: "Arroz Grado 2 Cuisine & Co 1 kg",
+        price: 1390,
+        unitPrice: 1390,
+        unit: "kg",
+        memberPrice: 1290,
+      }),
     ];
 
     const result = await buildList(adapter, ["arroz"], { frequentProducts });
@@ -128,7 +173,15 @@ describe("buildList con frecuentes (fase 2)", () => {
 
   it("sin match en frecuentes usa el ranking público normal", async () => {
     const adapter = fakeAdapter({
-      detergente: [product({ id: "d1", name: "Detergente Omo 3 kg", price: 8990, unitPrice: 2996, unit: "kg" })],
+      detergente: [
+        product({
+          id: "d1",
+          name: "Detergente Omo 3 kg",
+          price: 8990,
+          unitPrice: 2996,
+          unit: "kg",
+        }),
+      ],
     });
     const frequentProducts = [
       product({ id: "f1", name: "Arroz Cuisine & Co 1 kg", price: 1390 }),
@@ -144,7 +197,13 @@ describe("buildList con flags onlyOffers/onlyInStock", () => {
     const adapter = fakeAdapter({
       arroz: [
         product({ id: "sinoferta", price: 1000, unitPrice: 1000, unit: "kg" }),
-        product({ id: "oferta", price: 900, listPrice: 1200, unitPrice: 900, unit: "kg" }),
+        product({
+          id: "oferta",
+          price: 900,
+          listPrice: 1200,
+          unitPrice: 900,
+          unit: "kg",
+        }),
       ],
     });
     const result = await buildList(adapter, ["arroz"], { onlyOffers: true });
@@ -173,10 +232,24 @@ describe("buildList con flags onlyOffers/onlyInStock", () => {
 
   it("onlyOffers ignora un frecuente que no está en oferta", async () => {
     const adapter = fakeAdapter({
-      arroz: [product({ id: "oferta", price: 900, listPrice: 1200, unitPrice: 900, unit: "kg" })],
+      arroz: [
+        product({
+          id: "oferta",
+          price: 900,
+          listPrice: 1200,
+          unitPrice: 900,
+          unit: "kg",
+        }),
+      ],
     });
     const frequentProducts = [
-      product({ id: "freq", name: "arroz freq", price: 1000, unitPrice: 1000, unit: "kg" }),
+      product({
+        id: "freq",
+        name: "arroz freq",
+        price: 1000,
+        unitPrice: 1000,
+        unit: "kg",
+      }),
     ];
     const result = await buildList(adapter, ["arroz"], {
       onlyOffers: true,
@@ -243,7 +316,10 @@ describe("suggestSwaps", () => {
       },
       async getProduct(url: string) {
         const id = url.includes("similar") ? "similar" : "actual";
-        return { ...(id === "similar" ? similar : actual), ingredients: detailById[id] };
+        return {
+          ...(id === "similar" ? similar : actual),
+          ingredients: detailById[id],
+        };
       },
     } as unknown as StoreAdapter;
 

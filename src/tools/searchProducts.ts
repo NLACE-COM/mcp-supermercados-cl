@@ -31,7 +31,7 @@ export function registerSearchProducts(server: McpServer): void {
         query: z
           .string()
           .min(1)
-          .describe("Texto de búsqueda, ej. \"leche descremada\" o \"arroz grado 1\"."),
+          .describe('Texto de búsqueda, ej. "leche descremada" o "arroz grado 1".'),
         limit: z
           .number()
           .int()
@@ -44,7 +44,7 @@ export function registerSearchProducts(server: McpServer): void {
           .string()
           .optional()
           .describe(
-            "Código de sucursal para precios/stock locales, ej. \"jumboclj512\". Omitir para catálogo nacional."
+            'Código de sucursal para precios/stock locales, ej. "jumboclj512". Omitir para catálogo nacional.'
           ),
         maxPrice: z
           .number()
@@ -70,7 +70,17 @@ export function registerSearchProducts(server: McpServer): void {
           .describe("true = solo productos con stock real."),
       },
     },
-    async ({ store, query, limit, page, branchId, maxPrice, minPrice, sortBy, inStockOnly }) => {
+    async ({
+      store,
+      query,
+      limit,
+      page,
+      branchId,
+      maxPrice,
+      minPrice,
+      sortBy,
+      inStockOnly,
+    }) => {
       try {
         const adapter = getAdapter(store);
         // Pedimos un poco más para que el filtro/orden tenga de dónde elegir.
@@ -82,8 +92,10 @@ export function registerSearchProducts(server: McpServer): void {
 
         let products = raw;
         if (inStockOnly) products = products.filter((p) => p.inStock);
-        if (maxPrice !== undefined) products = products.filter((p) => p.price <= maxPrice);
-        if (minPrice !== undefined) products = products.filter((p) => p.price >= minPrice);
+        if (maxPrice !== undefined)
+          products = products.filter((p) => p.price <= maxPrice);
+        if (minPrice !== undefined)
+          products = products.filter((p) => p.price >= minPrice);
         if (sortBy === "price") {
           products = [...products].sort((a, b) => a.price - b.price);
         } else if (sortBy === "unitPrice") {

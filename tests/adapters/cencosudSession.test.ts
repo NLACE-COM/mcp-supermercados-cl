@@ -135,8 +135,8 @@ describe("CencosudAdapter · getFrequentPurchases", () => {
   });
 
   it("sin material de sesión explica cómo habilitarlo en vez de fallar en seco", async () => {
-    await expect(
-      adapter.getFrequentPurchases({ store: "jumbo" })
-    ).rejects.toThrow(/puente de navegador|frequentCards/);
+    await expect(adapter.getFrequentPurchases({ store: "jumbo" })).rejects.toThrow(
+      /puente de navegador|frequentCards/
+    );
   });
 });

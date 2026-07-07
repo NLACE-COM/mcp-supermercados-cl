@@ -1,5 +1,5 @@
 import type { StoreAdapter } from "../adapters/base.js";
-import { normalizeText } from "./normalize.js";
+import { matchScore } from "./matching.js";
 import type { Product, Session } from "./types.js";
 
 /**
@@ -54,24 +54,15 @@ function isOnOffer(p: Product): boolean {
 }
 
 /**
- * ¿Alguno de los frecuentes matchea la query? Match laxo: todas las
- * palabras significativas de la query aparecen en el nombre del frecuente.
+ * ¿Alguno de los frecuentes matchea la query? Usa el matching en español
+ * (plurales, tildes, sinónimos/regionalismos): exige cubrir todos los tokens
+ * significativos de la query. Así "palta" encuentra "Aguacate Hass" y
+ * "huevos" encuentra "Huevo", cosa que el match literal antiguo perdía.
  */
-export function matchFrequent(
-  query: string,
-  frequent: Product[]
-): Product | undefined {
-  const words = normalizeText(query)
-    .split(/\s+/)
-    .filter((w) => w.length > 2);
-  if (words.length === 0) return undefined;
-
+export function matchFrequent(query: string, frequent: Product[]): Product | undefined {
   const matches = frequent
     .filter((p) => p.inStock)
-    .filter((p) => {
-      const name = normalizeText(p.name);
-      return words.every((w) => name.includes(w));
-    });
+    .filter((p) => matchScore(query, p.name) >= 1);
   if (matches.length === 0) return undefined;
 
   // Entre los frecuentes que matchean, el de mejor precio por unidad (o
@@ -179,10 +170,18 @@ export async function buildList(
   // Secuencial a propósito: el rate limit por host ya serializa, y así la
   // lista mantiene ritmo humano.
   for (const [i, query] of queries.entries()) {
-    await onProgress?.(i, queries.length, `Buscando "${query}" (${i + 1}/${queries.length})…`);
+    await onProgress?.(
+      i,
+      queries.length,
+      `Buscando "${query}" (${i + 1}/${queries.length})…`
+    );
     items.push(await resolveItem(adapter, query, opts));
   }
-  await onProgress?.(queries.length, queries.length, "Ítems resueltos; calculando totales…");
+  await onProgress?.(
+    queries.length,
+    queries.length,
+    "Ítems resueltos; calculando totales…"
+  );
   const total = items.reduce((sum, i) => sum + (i.chosen?.price ?? 0), 0);
   const totalSaving = items.reduce((sum, i) => sum + i.saving, 0);
   return { items, total, totalSaving };

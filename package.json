@@ -40,6 +40,11 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run tests/adapters",
     "test:live": "LIVE=1 vitest run tests/live",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
@@ -50,9 +55,13 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/node": "^20.14.0",
+    "eslint": "^9.39.4",
+    "prettier": "^3.9.4",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
+    "typescript-eslint": "^8.63.0",
     "vitest": "^2.1.0"
   }
 }

@@ -7,19 +7,37 @@ import {
 
 describe("parseUnitPriceString · normalización a base comparable", () => {
   it("mantiene por litro y por kilo", () => {
-    expect(parseUnitPriceString("$2.500 x litro")).toEqual({ unitPrice: 2500, unit: "lt" });
-    expect(parseUnitPriceString("$1.190 x kg")).toEqual({ unitPrice: 1190, unit: "kg" });
-    expect(parseUnitPriceString("$1.097 por LT")).toEqual({ unitPrice: 1097, unit: "lt" });
+    expect(parseUnitPriceString("$2.500 x litro")).toEqual({
+      unitPrice: 2500,
+      unit: "lt",
+    });
+    expect(parseUnitPriceString("$1.190 x kg")).toEqual({
+      unitPrice: 1190,
+      unit: "kg",
+    });
+    expect(parseUnitPriceString("$1.097 por LT")).toEqual({
+      unitPrice: 1097,
+      unit: "lt",
+    });
   });
 
   it("convierte 100ml a por litro (el caso que confundía la comparación)", () => {
     // "$1.048 x 100ml" = $10.480 por litro
-    expect(parseUnitPriceString("$1.048 x 100ml")).toEqual({ unitPrice: 10480, unit: "lt" });
+    expect(parseUnitPriceString("$1.048 x 100ml")).toEqual({
+      unitPrice: 10480,
+      unit: "lt",
+    });
   });
 
   it("convierte gramos a por kilo", () => {
-    expect(parseUnitPriceString("$700 x 100 g")).toEqual({ unitPrice: 7000, unit: "kg" });
-    expect(parseUnitPriceString("$1.500 x 250 g")).toEqual({ unitPrice: 6000, unit: "kg" });
+    expect(parseUnitPriceString("$700 x 100 g")).toEqual({
+      unitPrice: 7000,
+      unit: "kg",
+    });
+    expect(parseUnitPriceString("$1.500 x 250 g")).toEqual({
+      unitPrice: 6000,
+      unit: "kg",
+    });
   });
 
   it("texto sin patrón -> undefined", () => {

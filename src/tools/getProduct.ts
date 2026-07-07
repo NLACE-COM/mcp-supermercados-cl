@@ -16,18 +16,20 @@ export function registerGetProduct(server: McpServer): void {
         store: z
           .enum(["jumbo", "santaisabel"])
           .default("jumbo")
-          .describe("Cadena: jumbo (precio Prime) o santaisabel (precio socio, sucursal por defecto o vía branchId)."),
+          .describe(
+            "Cadena: jumbo (precio Prime) o santaisabel (precio socio, sucursal por defecto o vía branchId)."
+          ),
         idOrUrl: z
           .string()
           .min(1)
           .describe(
-            "URL completa, path (\"/arroz-.../p\") o slug del producto. Usar el `url` devuelto por search_products."
+            'URL completa, path ("/arroz-.../p") o slug del producto. Usar el `url` devuelto por search_products.'
           ),
         branchId: z
           .string()
           .optional()
           .describe(
-            "Sucursal para el precio local. Santa Isabel: nombre de tienda (ej. \"pedrofontova\"); por defecto usa una sucursal céntrica."
+            'Sucursal para el precio local. Santa Isabel: nombre de tienda (ej. "pedrofontova"); por defecto usa una sucursal céntrica.'
           ),
       },
     },

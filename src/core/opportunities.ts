@@ -44,9 +44,7 @@ function toOpportunity(p: Product): Opportunity | null {
   if (!hasListDiscount && memberSaving === undefined) return null;
 
   const saving = hasListDiscount ? p.listPrice! - p.price : 0;
-  const discountPct = hasListDiscount
-    ? Math.round((saving / p.listPrice!) * 100)
-    : 0;
+  const discountPct = hasListDiscount ? Math.round((saving / p.listPrice!) * 100) : 0;
 
   // Filtra el falso 90% de los productos a granel (unidades mezcladas).
   if (discountPct > MAX_REALISTIC_DISCOUNT_PCT) return null;
@@ -76,13 +74,15 @@ export async function findOpportunities(
   const exclude = new Set(opts.excludeIds ?? []);
   const minPct = opts.minDiscountPct ?? 0;
 
-  return offers
-    .filter((p) => p.inStock)
-    .filter((p) => !exclude.has(p.id))
-    .map(toOpportunity)
-    .filter((o): o is Opportunity => o !== null)
-    .filter((o) => o.discountPct >= minPct)
-    // Mayor descuento primero; a igual %, mayor ahorro absoluto.
-    .sort((a, b) => b.discountPct - a.discountPct || b.saving - a.saving)
-    .slice(0, opts.limit ?? 20);
+  return (
+    offers
+      .filter((p) => p.inStock)
+      .filter((p) => !exclude.has(p.id))
+      .map(toOpportunity)
+      .filter((o): o is Opportunity => o !== null)
+      .filter((o) => o.discountPct >= minPct)
+      // Mayor descuento primero; a igual %, mayor ahorro absoluto.
+      .sort((a, b) => b.discountPct - a.discountPct || b.saving - a.saving)
+      .slice(0, opts.limit ?? 20)
+  );
 }

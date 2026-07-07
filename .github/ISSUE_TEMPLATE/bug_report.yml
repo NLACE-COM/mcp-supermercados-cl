@@ -1,0 +1,89 @@
+name: 🐛 Reporte de bug
+description: Algo no funciona (una cadena falla, precios raros, una tool rompe).
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar. Mientras más específico, más rápido se arregla.
+        **No incluyas tu token de sesión, cookies ni datos personales.**
+
+  - type: dropdown
+    id: store
+    attributes:
+      label: Cadena afectada
+      options:
+        - Jumbo
+        - Santa Isabel
+        - Unimarc
+        - Tottus
+        - Lider
+        - Varias / no aplica
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Tool involucrada
+      options:
+        - search_products
+        - build_list
+        - suggest_swaps
+        - get_product
+        - get_offers
+        - find_opportunities
+        - compare_stores
+        - get_frequent_purchases
+        - get_saved_lists
+        - add_to_cart / get_cart
+        - adapter_status
+        - Otra / no sé
+    validations:
+      required: true
+
+  - type: input
+    id: query
+    attributes:
+      label: Ítem o consulta
+      description: Qué buscabas exactamente (ej. "leche descremada 1L", "arroz").
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas vs. qué pasó
+      description: Describe el resultado esperado y el real.
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Mensaje de error (si hubo)
+      description: Pega el error tal cual. Revisa que no lleve tokens ni datos personales.
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Versión del paquete
+      description: Salida de `npm ls mcp-supermercados-cl` o la que uses vía npx.
+      placeholder: "1.0.3"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: ip
+    attributes:
+      label: ¿Desde dónde corre?
+      description: Unimarc/Tottus/Lider requieren IP residencial.
+      options:
+        - Mi máquina (IP residencial)
+        - Servidor / nube (datacenter)
+        - No sé
+    validations:
+      required: true

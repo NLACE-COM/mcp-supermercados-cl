@@ -28,7 +28,7 @@ export function registerFindOpportunities(server: McpServer): void {
         category: z
           .string()
           .optional()
-          .describe("Categoría para acotar, ej. \"Despensa\", \"Lácteos\"."),
+          .describe('Categoría para acotar, ej. "Despensa", "Lácteos".'),
         minDiscountPct: z
           .number()
           .int()
@@ -46,7 +46,7 @@ export function registerFindOpportunities(server: McpServer): void {
         branchId: z
           .string()
           .optional()
-          .describe("Sucursal para precios/stock locales, ej. \"jumboclj512\"."),
+          .describe('Sucursal para precios/stock locales, ej. "jumboclj512".'),
         primeOnly: z
           .boolean()
           .default(false)
@@ -59,7 +59,15 @@ export function registerFindOpportunities(server: McpServer): void {
           ),
       },
     },
-    async ({ store, category, minDiscountPct, limit, branchId, primeOnly, excludeIds }) => {
+    async ({
+      store,
+      category,
+      minDiscountPct,
+      limit,
+      branchId,
+      primeOnly,
+      excludeIds,
+    }) => {
       try {
         const opportunities = await findOpportunities(store, {
           category,

@@ -18,14 +18,18 @@ export function registerCompareStores(server: McpServer): void {
       description:
         "Estima el total de una misma lista (ítems en texto libre) en varias cadenas chilenas y señala la más " +
         "barata entre las que tienen todos los productos. Devuelve por cadena el mejor match por ítem y el total. " +
-        "Capacidad secundaria: para el día a día conviene build_list con tu sesión en tu cadena. " +
+        "IMPORTANTE: cada cadena resuelve el ítem por su cuenta, así que el 'más barato' puede ser un producto o " +
+        "formato distinto; usa el campo `comparability` (same/similar/mixed por ítem) y compara por precio por " +
+        "unidad, no solo por total. Capacidad secundaria: para el día a día conviene build_list con tu sesión. " +
         "Nota: unimarc/tottus/lider requieren IP residencial; si una cadena falla, se reporta y las demás siguen.",
       inputSchema: {
         items: z
           .array(z.string().min(1))
           .min(1)
           .max(20)
-          .describe("Lista de productos en texto libre, ej. [\"leche\", \"arroz 1kg\", \"café\"]."),
+          .describe(
+            'Lista de productos en texto libre, ej. ["leche", "arroz 1kg", "café"].'
+          ),
         stores: z
           .array(z.enum(["jumbo", "santaisabel", "unimarc", "tottus", "lider"]))
           .optional()
@@ -33,7 +37,7 @@ export function registerCompareStores(server: McpServer): void {
         branchId: z
           .string()
           .optional()
-          .describe("Sucursal para las cadenas Cencosud (ej. \"jumboclj512\")."),
+          .describe('Sucursal para las cadenas Cencosud (ej. "jumboclj512").'),
       },
     },
     async ({ items, stores, branchId }, extra) => {
@@ -52,6 +56,8 @@ export function registerCompareStores(server: McpServer): void {
               {
                 items: result.items,
                 cheapest: result.cheapest ?? null,
+                disclaimer: result.disclaimer,
+                comparability: result.comparability,
                 stores: result.stores.map((s) => ({
                   store: s.store,
                   matched: `${s.matched}/${items.length}`,
@@ -60,7 +66,14 @@ export function registerCompareStores(server: McpServer): void {
                   items: s.items.map((i) => ({
                     query: i.query,
                     product: i.product
-                      ? { name: i.product.name, price: i.product.price, unitPrice: i.product.unitPrice, unit: i.product.unit }
+                      ? {
+                          name: i.product.name,
+                          brand: i.product.brand,
+                          ean: i.product.ean,
+                          price: i.product.price,
+                          unitPrice: i.product.unitPrice,
+                          unit: i.product.unit,
+                        }
                       : null,
                   })),
                 })),

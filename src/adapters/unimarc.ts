@@ -71,7 +71,9 @@ interface UnimarcSearchResponse {
  * estructurados (itemsRequiredForPromotion, price efectivo por unidad) y cae
  * al parseo del texto para el resto.
  */
-function buildUnimarcBundle(promo: NonNullable<UnimarcProduct["promotion"]>): Promotion {
+function buildUnimarcBundle(
+  promo: NonNullable<UnimarcProduct["promotion"]>
+): Promotion {
   const parsed = parseBundle(promo.descriptionMessage) ?? {
     description: promo.descriptionMessage!,
     type: "bundle",
@@ -151,17 +153,13 @@ export class UnimarcAdapter implements StoreAdapter {
     // Club; lo exponemos también como memberPrice para consistencia.
     const memberPrice = isClub ? price : undefined;
 
-    const url = item.slug
-      ? `${SITE}/product${item.slug}`
-      : undefined;
+    const url = item.slug ? `${SITE}/product${item.slug}` : undefined;
 
     // Bundle: promotion con descriptionMessage ("2 x $2.000") y datos
     // estructurados (itemsRequiredForPromotion + price efectivo por unidad).
     const promo = p.promotion;
     const promotions =
-      promo?.hasSavings && promo.descriptionMessage
-        ? [buildUnimarcBundle(promo)]
-        : [];
+      promo?.hasSavings && promo.descriptionMessage ? [buildUnimarcBundle(promo)] : [];
 
     return {
       store: this.id,
