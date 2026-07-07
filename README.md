@@ -5,7 +5,7 @@
 
 [![npm](https://img.shields.io/npm/v/mcp-supermercados-cl?logo=npm)](https://www.npmjs.com/package/mcp-supermercados-cl)
 ![node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
-![tests](https://img.shields.io/badge/tests-104%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-106%20passing-brightgreen)
 ![license](https://img.shields.io/badge/licencia-MIT-blue)
 
 El foco es **profundidad en la cadena donde tú ya compras** — precios club,
@@ -172,7 +172,7 @@ Ver [`src/adapters/session.ts`](src/adapters/session.ts) y
 ## 🧪 Desarrollo y tests
 
 ```bash
-npm test          # tests de contrato con fixtures reales (sin red) — 104 tests
+npm test          # tests de contrato con fixtures reales (sin red) — 106 tests
 npm run test:live # smoke contra los sitios reales (opt-in, LIVE=1)
 ```
 
@@ -188,8 +188,16 @@ cambie su formato, anotando la fecha.
 - **Un servidor, un adaptador por cadena** (`src/adapters/`). Esquema
   normalizado con zod (`src/core/types.ts`): precio normal y precio socio
   **separados**, precio por unidad normalizado a base canónica.
-- **HTTP a ritmo humano**: 1 req/s por dominio con jitter, reintentos con
+- **HTTP a ritmo humano, por tipo de host**: los endpoints de API (Constructor.io
+  y los BFF de Cencosud/Unimarc/Santa Isabel) van a ~350 ms; los sitios que se
+  scrapean por SSR (Tottus, Lider, PDPs `www.*`) mantienen ~1 s. Reintentos con
   backoff, user-agent realista (`src/http/client.ts`). Cache TTL 15 min.
+  Ajustable por entorno: `SUPERMERCADOS_MIN_DELAY_MS`, `SUPERMERCADOS_FAST_DELAY_MS`,
+  `SUPERMERCADOS_TIMEOUT_MS`, `SUPERMERCADOS_MAX_RETRIES`.
+- **Feedback en vivo**: `build_list` y `compare_stores` emiten notificaciones de
+  progreso MCP (`notifications/progress`) si el cliente las soporta, para no
+  quedar en silencio durante listas largas. `compare_stores` limita cada cadena
+  a 25 s y devuelve resultado parcial en vez de bloquear a las demás.
 - **Adaptadores aislados**: un cambio de sitio rompe un adaptador, no todo.
 - Endpoints documentados en [`docs/`](docs) y en
   [`docs/PLAN-arquitectura.md`](docs/PLAN-arquitectura.md).
