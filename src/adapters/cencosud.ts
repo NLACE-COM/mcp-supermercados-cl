@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { TtlCache } from "../core/cache.js";
 import { computeUnitPrice, normalizeText, toClp } from "../core/normalize.js";
 import type {
   Cart,
@@ -114,6 +115,9 @@ export class CencosudAdapter implements StoreAdapter {
   private readonly http: HttpFetcher;
   /** UUID persistente por proceso, análogo al cookie `i` de ciojs. */
   private readonly clientId: string;
+  /** Cache 15 min por consulta (regla del plan) para no regolpear el sitio. */
+  private readonly cache = new TtlCache<Product[]>();
+  private readonly productCache = new TtlCache<Product | null>();
 
   constructor(
     config: CencosudBannerConfig = JUMBO_CONFIG,
@@ -133,7 +137,17 @@ export class CencosudAdapter implements StoreAdapter {
   async searchProducts(query: string, opts: SearchOpts = {}): Promise<Product[]> {
     const limit = Math.min(Math.max(opts.limit ?? 10, 1), 50);
     const page = Math.max(opts.page ?? 1, 1);
+    const cacheKey = `search:${query}:${limit}:${page}:${opts.branchId ?? ""}`;
+    return this.cache.getOrFetch(cacheKey, () =>
+      this.fetchSearch(query, { limit, page, branchId: opts.branchId })
+    );
+  }
 
+  private async fetchSearch(
+    query: string,
+    opts: { limit: number; page: number; branchId?: string }
+  ): Promise<Product[]> {
+    const { limit, page } = opts;
     const params = new URLSearchParams({
       key: this.config.constructorKey,
       i: this.clientId,
@@ -240,10 +254,12 @@ export class CencosudAdapter implements StoreAdapter {
   async getProduct(idOrUrl: string, _session?: Session): Promise<Product | null> {
     const url = this.resolveProductUrl(idOrUrl);
     if (!url) return null;
-    const html = await this.http.getText(url);
-    const state = extractDehydratedState(html);
-    if (!state) return null;
-    return this.mapPdpState(state, url);
+    return this.productCache.getOrFetch(`pdp:${url}`, async () => {
+      const html = await this.http.getText(url);
+      const state = extractDehydratedState(html);
+      if (!state) return null;
+      return this.mapPdpState(state, url);
+    });
   }
 
   /** Acepta URL completa, path (/slug/p) o slug pelado. */
@@ -331,6 +347,11 @@ export class CencosudAdapter implements StoreAdapter {
    * del precio socio exacto requieren getProduct, que lee la PDP).
    */
   async getOffers(opts: OfferOpts = {}, _session?: Session): Promise<Product[]> {
+    const cacheKey = `offers:${opts.category ?? ""}:${opts.limit ?? 20}:${opts.page ?? 1}:${opts.branchId ?? ""}:${opts.primeOnly ?? false}`;
+    return this.cache.getOrFetch(cacheKey, () => this.fetchOffers(opts));
+  }
+
+  private async fetchOffers(opts: OfferOpts): Promise<Product[]> {
     const collectionId = opts.primeOnly
       ? PRIME_OFFERS_COLLECTION_ID
       : OFFERS_COLLECTION_ID;

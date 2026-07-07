@@ -1,0 +1,114 @@
+import { describe, expect, it } from "vitest";
+import type { StoreAdapter } from "../../src/adapters/base.js";
+import {
+  buildList,
+  rankCandidates,
+  suggestSwaps,
+} from "../../src/core/listBuilder.js";
+import type { Product, SearchOpts } from "../../src/core/types.js";
+
+function product(overrides: Partial<Product> & { id: string }): Product {
+  return {
+    store: "jumbo",
+    name: `Producto ${overrides.id}`,
+    price: 1000,
+    inStock: true,
+    fetchedAt: new Date().toISOString(),
+    ...overrides,
+  } as Product;
+}
+
+/** Adaptador falso: devuelve resultados fijos por query. */
+function fakeAdapter(resultsByQuery: Record<string, Product[]>): StoreAdapter {
+  return {
+    id: "jumbo",
+    async searchProducts(query: string, _opts?: SearchOpts) {
+      return resultsByQuery[query] ?? [];
+    },
+  } as StoreAdapter;
+}
+
+describe("rankCandidates", () => {
+  it("prefiere menor precio por unidad dentro de la unidad predominante", () => {
+    const ranked = rankCandidates([
+      product({ id: "caro", price: 2000, unitPrice: 2000, unit: "kg" }),
+      product({ id: "barato", price: 1500, unitPrice: 1500, unit: "kg" }),
+      product({ id: "otro-formato", price: 500, unitPrice: 5000, unit: "kg" }),
+    ]);
+    expect(ranked.map((p) => p.id)).toEqual(["barato", "caro", "otro-formato"]);
+  });
+
+  it("descarta productos sin stock", () => {
+    const ranked = rankCandidates([
+      product({ id: "sin-stock", inStock: false, unitPrice: 100, unit: "kg" }),
+      product({ id: "con-stock", unitPrice: 900, unit: "kg" }),
+    ]);
+    expect(ranked.map((p) => p.id)).toEqual(["con-stock"]);
+  });
+
+  it("sin precios por unidad ordena por precio absoluto", () => {
+    const ranked = rankCandidates([
+      product({ id: "a", price: 3000 }),
+      product({ id: "b", price: 1000 }),
+    ]);
+    expect(ranked.map((p) => p.id)).toEqual(["b", "a"]);
+  });
+});
+
+describe("buildList", () => {
+  it("resuelve ítems, suma total y ahorro por ofertas", async () => {
+    const adapter = fakeAdapter({
+      leche: [
+        product({ id: "l1", price: 1000, listPrice: 1200, unitPrice: 1000, unit: "lt" }),
+        product({ id: "l2", price: 1500, unitPrice: 1500, unit: "lt" }),
+      ],
+      arroz: [product({ id: "a1", price: 1790, listPrice: 2440, unitPrice: 1790, unit: "kg" })],
+    });
+
+    const result = await buildList(adapter, ["leche", "arroz"]);
+
+    expect(result.items[0].chosen?.id).toBe("l1");
+    expect(result.items[0].alternatives.map((p) => p.id)).toEqual(["l2"]);
+    expect(result.total).toBe(1000 + 1790);
+    expect(result.totalSaving).toBe(200 + 650);
+  });
+
+  it("ítem sin resultados queda con nota y no rompe el total", async () => {
+    const adapter = fakeAdapter({
+      leche: [product({ id: "l1", price: 990, unitPrice: 990, unit: "lt" })],
+    });
+    const result = await buildList(adapter, ["leche", "unicornio"]);
+
+    expect(result.items[1].chosen).toBeNull();
+    expect(result.items[1].note).toMatch(/Sin resultados/);
+    expect(result.total).toBe(990);
+  });
+});
+
+describe("suggestSwaps", () => {
+  it("sugiere solo alternativas con mejor precio por unidad que el match actual", async () => {
+    const adapter = fakeAdapter({
+      "arroz tucapel": [
+        product({ id: "actual", price: 2450, unitPrice: 2450, unit: "kg" }),
+        product({ id: "mas-barato", price: 1890, unitPrice: 1890, unit: "kg" }),
+        product({ id: "mas-caro", price: 2690, unitPrice: 2690, unit: "kg" }),
+        product({ id: "otra-unidad", price: 100, unitPrice: 100, unit: "un" }),
+      ],
+    });
+
+    const result = await suggestSwaps(adapter, "arroz tucapel");
+
+    expect(result.current?.id).toBe("actual");
+    expect(result.swaps.map((s) => s.id)).toEqual(["mas-barato"]);
+    expect(result.swaps[0].savingPerUnit).toBe(560);
+  });
+
+  it("sin precio por unidad comparable devuelve nota", async () => {
+    const adapter = fakeAdapter({
+      pan: [product({ id: "p1", price: 1000 })],
+    });
+    const result = await suggestSwaps(adapter, "pan");
+    expect(result.swaps).toEqual([]);
+    expect(result.note).toMatch(/precio por unidad/);
+  });
+});

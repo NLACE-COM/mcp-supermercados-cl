@@ -13,7 +13,8 @@ beneficios por RUT del usuario (Jumbo primero), no comparación entre cadenas.
 ## Estado (actualizar al avanzar)
 
 - **Fase 1 completa** (2026-07-06): tools `search_products`, `get_product` y `get_offers` funcionando contra Jumbo con tests de contrato (fixtures reales) y smoke live. `get_product` es la fuente del precio Prime (`memberPrice`).
-- Fase 2 (sesión/precio club, frecuentes, listas) y 3 (build_list/carro): interfaces declaradas en `src/adapters/base.ts`, lanzan `NotImplementedError`. Para fase 2 se necesita capturar requests con la sesión logueada del usuario en jumbo.cl (y ahí buscar la api key de sm-web-api que hoy da 401).
+- **Fase 3 parcial** (2026-07-07): `build_list` y `suggest_swaps` públicos (ranking por precio por unidad + ofertas, lógica en `src/core/listBuilder.ts`), `adapter_status`, cache TTL 15 min en el adaptador (`src/core/cache.ts`). Falta: priorizar frecuentes (depende de fase 2) y carro.
+- Fase 2 (sesión/precio club, frecuentes, listas): interfaces declaradas en `src/adapters/base.ts`, lanzan `NotImplementedError`. **Bloqueada en el usuario**: se necesita su sesión iniciada en jumbo.cl (Chrome) para capturar los endpoints de frecuentes/listas/precio socio y la api key de sm-web-api que hoy da 401.
 - Santa Isabel: key Constructor extraída (`key_c73M3GMIWJ8AcNnd`) pero su host de zona es distinto al de Jumbo — capturar en fase 4.
 
 ## Convenciones

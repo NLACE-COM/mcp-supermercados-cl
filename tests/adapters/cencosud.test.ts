@@ -185,17 +185,23 @@ describe("CencosudAdapter · detalle de producto (PDP SSR)", () => {
     };
     const a = new CencosudAdapter(JUMBO_CONFIG, fakeHttp);
 
-    await a.getProduct("arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho");
-    await a.getProduct("/arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho/p");
-    await a.getProduct(
+    const bySlug = await a.getProduct(
+      "arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho"
+    );
+    const byPath = await a.getProduct(
+      "/arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho/p"
+    );
+    const byUrl = await a.getProduct(
       "https://www.jumbo.cl/arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho/p"
     );
 
+    // Las tres formas resuelven a la misma URL; el cache TTL hace que solo
+    // se fetchee una vez.
     expect(urls).toEqual([
       "https://www.jumbo.cl/arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho/p",
-      "https://www.jumbo.cl/arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho/p",
-      "https://www.jumbo.cl/arroz-grado-1-banquete-1-kg-premium-grano-largo-y-ancho/p",
     ]);
+    expect(bySlug?.id).toBe(byPath?.id);
+    expect(byPath?.id).toBe(byUrl?.id);
   });
 });
 
