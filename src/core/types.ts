@@ -46,6 +46,8 @@ export const ProductSchema = z.object({
   ean: z.string().optional(),
   name: z.string(),
   brand: z.string().optional(),
+  /** Descripción/ficha corta del producto (para enriquecer al modelo) */
+  description: z.string().optional(),
   /** Precio vigente público en CLP */
   price: z.number().int().nonnegative(),
   /** Precio normal/lista si hay descuento */

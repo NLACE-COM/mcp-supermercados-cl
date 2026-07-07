@@ -214,4 +214,42 @@ describe("suggestSwaps", () => {
     expect(result.swaps).toEqual([]);
     expect(result.note).toMatch(/precio por unidad/);
   });
+
+  it("preferNatural incluye alternativas de precio similar con ingredientes", async () => {
+    const actual = product({
+      id: "actual",
+      name: "Cereal Choco 300 g",
+      price: 3000,
+      unitPrice: 10000,
+      unit: "kg",
+      url: "https://x/actual/p",
+    });
+    const similar = product({
+      id: "similar",
+      name: "Cereal Natural 300 g",
+      price: 3100,
+      unitPrice: 10333,
+      unit: "kg",
+      url: "https://x/similar/p",
+    });
+    const detailById: Record<string, string[]> = {
+      actual: ["maíz", "azúcar", "cacao", "saborizante", "colorante"],
+      similar: ["avena integral"],
+    };
+    const adapter = {
+      id: "jumbo",
+      async searchProducts() {
+        return [actual, similar];
+      },
+      async getProduct(url: string) {
+        const id = url.includes("similar") ? "similar" : "actual";
+        return { ...(id === "similar" ? similar : actual), ingredients: detailById[id] };
+      },
+    } as unknown as StoreAdapter;
+
+    const result = await suggestSwaps(adapter, "cereal", { preferNatural: true });
+    expect(result.current?.ingredients).toEqual(detailById.actual);
+    expect(result.swaps[0].id).toBe("similar");
+    expect(result.swaps[0].ingredients).toEqual(["avena integral"]);
+  });
 });

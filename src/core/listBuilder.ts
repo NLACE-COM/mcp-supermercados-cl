@@ -195,24 +195,39 @@ export async function loadFrequent(
   }
 }
 
+export interface SwapOpts extends ResolveOpts {
+  /**
+   * Modo "más natural manteniendo el precio": en vez de exigir mejor precio
+   * por unidad, considera alternativas de precio SIMILAR (dentro de la
+   * tolerancia) y trae sus ingredientes/sellos para que el modelo elija la
+   * más natural (menos ingredientes). Requiere que el adaptador exponga la
+   * ficha (get_product): hoy Jumbo y Santa Isabel.
+   */
+  preferNatural?: boolean;
+  /** Tolerancia de precio por unidad para "similar" (default 0.20 = ±20%). */
+  priceTolerance?: number;
+}
+
 export interface Swap {
   /** Ítem original (texto o nombre del producto actual) */
   query: string;
   /** Producto que el usuario tiene hoy (mejor match de la búsqueda) */
   current: Product | null;
-  /** Alternativas estrictamente más convenientes por precio por unidad */
+  /** Alternativas (por precio por unidad, o similares si preferNatural) */
   swaps: Array<Product & { savingPerUnit: number }>;
   note?: string;
 }
 
 /**
  * Reemplazos más convenientes dentro del mismo catálogo: misma búsqueda,
- * mejor precio por unidad que el producto actual.
+ * mejor precio por unidad que el producto actual. Con `preferNatural`,
+ * cambia el criterio a "precio similar + ingredientes" para elegir lo más
+ * natural sin subir el gasto.
  */
 export async function suggestSwaps(
   adapter: StoreAdapter,
   query: string,
-  opts: ResolveOpts = {}
+  opts: SwapOpts = {}
 ): Promise<Swap> {
   const candidates = await adapter.searchProducts(query, {
     limit: opts.perItemLimit ?? 10,
@@ -235,6 +250,10 @@ export async function suggestSwaps(
     };
   }
 
+  if (opts.preferNatural) {
+    return suggestNaturalSwaps(adapter, query, current, inStock, opts);
+  }
+
   const swaps = inStock
     .filter(
       (p) =>
@@ -248,4 +267,82 @@ export async function suggestSwaps(
     .map((p) => ({ ...p, savingPerUnit: current.unitPrice! - p.unitPrice! }));
 
   return { query, current, swaps };
+}
+
+/**
+ * Alternativas de precio similar enriquecidas con ingredientes, para el
+ * juicio "más natural / menos ingredientes" manteniendo el precio.
+ */
+async function suggestNaturalSwaps(
+  adapter: StoreAdapter,
+  query: string,
+  current: Product,
+  inStock: Product[],
+  opts: SwapOpts
+): Promise<Swap> {
+  const tol = opts.priceTolerance ?? 0.2;
+  const maxUnit = current.unitPrice! * (1 + tol);
+
+  // Candidatos de precio por unidad similar o menor (no más caros que la
+  // tolerancia), misma unidad, ordenados por precio por unidad.
+  const near = inStock
+    .filter(
+      (p) =>
+        p.id !== current.id &&
+        p.unit === current.unit &&
+        p.unitPrice !== undefined &&
+        p.unitPrice <= maxUnit
+    )
+    .sort((a, b) => a.unitPrice! - b.unitPrice!)
+    .slice(0, 4);
+
+  // Enriquecer con ingredientes (getProduct) el actual y los candidatos.
+  const withIngredients = await enrichIngredients(adapter, [current, ...near]);
+  const [enrichedCurrent, ...enrichedNear] = withIngredients;
+
+  const swaps = enrichedNear.map((p) => ({
+    ...p,
+    savingPerUnit: current.unitPrice! - p.unitPrice!,
+  }));
+
+  return {
+    query,
+    current: enrichedCurrent,
+    swaps,
+    note:
+      "Modo natural: alternativas de precio similar con sus ingredientes. " +
+      "Elige la de lista de ingredientes más corta/limpia según tu criterio.",
+  };
+}
+
+/** Trae ingredients/nutritionalFlags de cada producto vía get_product. */
+async function enrichIngredients(
+  adapter: StoreAdapter,
+  products: Product[]
+): Promise<Product[]> {
+  const out: Product[] = [];
+  for (const p of products) {
+    if (p.ingredients || !p.url) {
+      out.push(p);
+      continue;
+    }
+    try {
+      const detail = await adapter.getProduct(p.url);
+      out.push(
+        detail
+          ? {
+              ...p,
+              ...(detail.ingredients ? { ingredients: detail.ingredients } : {}),
+              ...(detail.nutritionalFlags
+                ? { nutritionalFlags: detail.nutritionalFlags }
+                : {}),
+              ...(detail.description ? { description: detail.description } : {}),
+            }
+          : p
+      );
+    } catch {
+      out.push(p);
+    }
+  }
+  return out;
 }
