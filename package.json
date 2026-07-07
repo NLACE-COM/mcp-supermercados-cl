@@ -1,6 +1,6 @@
 {
   "name": "mcp-supermercados-cl",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Servidor MCP para buscar productos, comparar precios y armar la mejor lista de compra en supermercados chilenos (Jumbo, Santa Isabel, Unimarc, Tottus, Lider) desde Claude o ChatGPT.",
   "license": "MIT",
   "type": "module",
