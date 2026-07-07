@@ -12,11 +12,43 @@
       "url": "https://www.tottus.cl/tottus-cl/articulo/110607034/arroz-tottus-g2-largo-fino-1-kg",
       "sellerName": "Tottus",
       "prices": [
-        { "type": "internetPrice", "crossed": false, "symbol": "$ ", "price": ["950"], "pum": { "label": "KG", "type": "pum", "symbol": "$ ", "price": ["950"] } },
-        { "type": "normalPrice", "crossed": true, "symbol": "$ ", "price": ["1.190"] }
+        {
+          "type": "internetPrice",
+          "crossed": false,
+          "symbol": "$ ",
+          "price": [
+            "950"
+          ],
+          "pum": {
+            "label": "KG",
+            "type": "pum",
+            "symbol": "$ ",
+            "price": [
+              "950"
+            ]
+          }
+        },
+        {
+          "type": "normalPrice",
+          "crossed": true,
+          "symbol": "$ ",
+          "price": [
+            "1.190"
+          ]
+        }
       ],
-      "measurements": { "format": "1 KG", "unit": "UN", "minUnits": 1, "maxUnits": 6 },
-      "discountBadge": { "label": "-20%" }
+      "measurements": {
+        "format": "1 KG",
+        "unit": "UN",
+        "minUnits": 1,
+        "maxUnits": 6
+      },
+      "discountBadge": {
+        "label": "-20%"
+      },
+      "mediaUrls": [
+        "https://media.tottus.cl/tottusCL/20306867_1/public"
+      ]
     },
     {
       "productId": "50051234",
@@ -26,9 +58,32 @@
       "url": "https://www.tottus.cl/tottus-cl/articulo/50051234/arroz-miraflores-g1-1-kg",
       "sellerName": "Tottus",
       "prices": [
-        { "type": "internetPrice", "crossed": false, "symbol": "$ ", "price": ["1.290"], "pum": { "label": "KG", "type": "pum", "symbol": "$ ", "price": ["1.290"] } }
+        {
+          "type": "internetPrice",
+          "crossed": false,
+          "symbol": "$ ",
+          "price": [
+            "1.290"
+          ],
+          "pum": {
+            "label": "KG",
+            "type": "pum",
+            "symbol": "$ ",
+            "price": [
+              "1.290"
+            ]
+          }
+        }
       ],
-      "measurements": { "format": "1 KG", "unit": "UN", "minUnits": 1, "maxUnits": 12 }
+      "measurements": {
+        "format": "1 KG",
+        "unit": "UN",
+        "minUnits": 1,
+        "maxUnits": 12
+      },
+      "mediaUrls": [
+        "https://media.tottus.cl/tottusCL/50051234_1/public"
+      ]
     }
   ]
 }

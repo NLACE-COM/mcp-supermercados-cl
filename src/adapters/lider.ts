@@ -48,6 +48,11 @@ interface LiderProduct {
   canonicalUrl?: string;
   availabilityStatus?: string;
   priceInfo?: LiderPriceInfo;
+  shortDescription?: string;
+  imageInfo?: {
+    thumbnailUrl?: string;
+    allImages?: Array<{ url?: string }>;
+  };
 }
 
 export class LiderAdapter implements StoreAdapter {
@@ -99,8 +104,10 @@ export class LiderAdapter implements StoreAdapter {
       ...(listPrice !== undefined ? { listPrice } : {}),
       ...(memberPrice !== undefined ? { memberPrice } : {}),
       ...(ppu ? { unitPrice: ppu.unitPrice, unit: ppu.unit } : {}),
+      ...(p.shortDescription ? { description: p.shortDescription } : {}),
       ...(listPrice !== undefined ? { offer: { type: "descuento" } } : {}),
       inStock: p.availabilityStatus ? p.availabilityStatus === "IN_STOCK" : true,
+      ...(imageUrl(p) ? { imageUrl: imageUrl(p) } : {}),
       ...(p.canonicalUrl ? { url: `${BASE}${p.canonicalUrl}` } : {}),
       fetchedAt: new Date().toISOString(),
     };
@@ -127,6 +134,13 @@ export class LiderAdapter implements StoreAdapter {
   async getCart(_s: Session): Promise<Cart> {
     throw new NotImplementedError(this.id, "getCart", "fase futura");
   }
+}
+
+/** Mejor URL de imagen de un producto de Lider. */
+function imageUrl(p: LiderProduct): string | undefined {
+  return (
+    p.imageInfo?.thumbnailUrl || p.imageInfo?.allImages?.[0]?.url || undefined
+  );
 }
 
 /**

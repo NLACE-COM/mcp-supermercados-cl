@@ -1,7 +1,14 @@
 {
   "_comment": "Búsqueda REAL de Unimarc (VTEX/BFF) capturada 2026-07-07. POST https://bff-unimarc-ecommerce.unimarc.cl/catalog/product/search con body {from,to,searching,promotionsOnly,orderBy,userTriggered}. Respuesta: availableProducts[] con {price, item, priceDetail}. price.price es el vigente (string $), price.listPrice el normal, price.ppum el precio por unidad. priceDetail.promotionalTag.text 'Club Unimarc' marca el precio socio.",
   "source": "POST https://bff-unimarc-ecommerce.unimarc.cl/catalog/product/search",
-  "requestBody": { "from": "0", "to": "49", "searching": "detergente", "promotionsOnly": false, "orderBy": "", "userTriggered": true },
+  "requestBody": {
+    "from": "0",
+    "to": "49",
+    "searching": "detergente",
+    "promotionsOnly": false,
+    "orderBy": "",
+    "userTriggered": true
+  },
   "query": "detergente",
   "count": 50,
   "availableProducts": [
@@ -23,11 +30,20 @@
         "ean": "7805000323677",
         "measurementUnitUn": "litro",
         "unitMultiplierUn": 0.4,
-        "netContent": "400 ml"
+        "netContent": "400 ml",
+        "images": [
+          "https://unimarc.vtexassets.com/arquivos/ids/231155/omo.jpg"
+        ],
+        "description": "Detergente líquido Omo ultra power 400 ml"
       },
       "priceDetail": {
         "discountPercentage": 22,
-        "promotionalTag": { "campaignId": "C011", "text": "Club Unimarc", "color": "#b9f2ff", "textColor": "#054453" },
+        "promotionalTag": {
+          "campaignId": "C011",
+          "text": "Club Unimarc",
+          "color": "#b9f2ff",
+          "textColor": "#054453"
+        },
         "membership": []
       }
     },
@@ -49,9 +65,16 @@
         "ean": "7801234567890",
         "measurementUnitUn": "litro",
         "unitMultiplierUn": 5,
-        "netContent": "5 L"
+        "netContent": "5 L",
+        "images": [
+          "https://unimarc.vtexassets.com/arquivos/ids/86503/merkat.jpg"
+        ]
       },
-      "priceDetail": { "discountPercentage": null, "promotionalTag": null, "membership": [] }
+      "priceDetail": {
+        "discountPercentage": null,
+        "promotionalTag": null,
+        "membership": []
+      }
     }
   ]
 }

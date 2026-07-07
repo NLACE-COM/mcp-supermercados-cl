@@ -42,6 +42,8 @@ interface UnimarcProduct {
     brand?: string;
     slug?: string;
     ean?: string;
+    description?: string;
+    images?: string[];
   };
   priceDetail?: {
     promotionalTag?: { text?: string } | null;
@@ -128,8 +130,12 @@ export class UnimarcAdapter implements StoreAdapter {
       ...(listPrice !== undefined ? { listPrice } : {}),
       ...(memberPrice !== undefined ? { memberPrice } : {}),
       ...(ppu ? { unitPrice: ppu.unitPrice, unit: ppu.unit } : {}),
+      ...(item.description && item.description !== item.name
+        ? { description: item.description }
+        : {}),
       ...(offer ? { offer } : {}),
       inStock: true,
+      ...(item.images?.[0] ? { imageUrl: item.images[0] } : {}),
       ...(url ? { url } : {}),
       fetchedAt: new Date().toISOString(),
     };

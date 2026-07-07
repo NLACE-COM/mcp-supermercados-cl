@@ -24,6 +24,8 @@ describe("LiderAdapter · mapProduct", () => {
     expect(p.unit).toBe("kg");
     expect(p.id).toBe("00780142021013");
     expect(p.url).toContain("super.lider.cl/ip/");
+    // enriquecimiento
+    expect(p.imageUrl).toContain("walmartimages.cl");
   });
 
   it("producto sin wasPrice no inventa descuento", () => {

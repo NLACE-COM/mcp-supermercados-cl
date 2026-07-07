@@ -23,6 +23,9 @@ describe("TottusAdapter · mapProduct", () => {
     expect(p.unitPrice).toBe(950);
     expect(p.unit).toBe("kg");
     expect(p.offer?.type).toBe("descuento");
+    // enriquecimiento
+    expect(p.imageUrl).toContain("media.tottus.cl");
+    expect(p.description).toBe("1 KG");
   });
 
   it("producto sin normalPrice no inventa listPrice", () => {

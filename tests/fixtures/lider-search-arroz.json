@@ -19,6 +19,9 @@
         "unitPrice": "$1.190 x kg",
         "savingsAmt": 600,
         "memberPriceString": ""
+      },
+      "imageInfo": {
+        "thumbnailUrl": "https://i5.walmartimages.cl/asr/prod0.jpeg"
       }
     },
     {
@@ -36,6 +39,9 @@
         "unitPrice": "$1.690 x kg",
         "savingsAmt": 560,
         "memberPriceString": ""
+      },
+      "imageInfo": {
+        "thumbnailUrl": "https://i5.walmartimages.cl/asr/prod1.jpeg"
       }
     },
     {
@@ -53,6 +59,9 @@
         "unitPrice": "$1.590 x kg",
         "savingsAmt": 0,
         "memberPriceString": ""
+      },
+      "imageInfo": {
+        "thumbnailUrl": "https://i5.walmartimages.cl/asr/prod2.jpeg"
       }
     }
   ]

@@ -410,6 +410,7 @@ export class CencosudAdapter implements StoreAdapter {
       ...(memberPrice !== undefined ? { memberPrice } : {}),
       ...(unitPrice !== undefined ? { unitPrice } : {}),
       ...(unit ? { unit } : {}),
+      ...(cencosudDescription(data) ? { description: cencosudDescription(data) } : {}),
       ...(offer ? { offer } : {}),
       inStock: item.stock === true,
       imageUrl: (item.images?.[0] as string | undefined) || undefined,
@@ -669,6 +670,18 @@ export function buildVariationsMap(branchId: string) {
     dtype: "array",
     filter_by: { and: [{ field: "data.storeId", value: branchId }] },
   };
+}
+
+/** Descripción legible de la ficha: prioriza el texto, cae al meta tag. */
+function cencosudDescription(data: any): string | undefined {
+  const raw =
+    (typeof data?.description === "string" && data.description) ||
+    (typeof data?.metaTagDescription === "string" && data.metaTagDescription) ||
+    undefined;
+  if (!raw) return undefined;
+  // limpiar HTML y recortar
+  const text = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return text.length > 0 ? text.slice(0, 600) : undefined;
 }
 
 /** Búsqueda en profundidad sobre el árbol de categorías de Constructor. */

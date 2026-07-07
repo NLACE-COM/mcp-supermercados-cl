@@ -26,6 +26,9 @@ describe("UnimarcAdapter · mapProduct", () => {
     expect(p.offer?.clubOnly).toBe(true);
     expect(p.memberPrice).toBe(1000);
     expect(p.ean).toBe("7805000323677");
+    // enriquecimiento
+    expect(p.imageUrl).toContain("vtexassets.com");
+    expect(p.description).toContain("Omo ultra power");
   });
 
   it("producto sin oferta ni club queda limpio", () => {

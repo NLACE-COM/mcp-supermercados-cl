@@ -41,6 +41,7 @@ interface TottusProduct {
   url?: string;
   prices?: TottusPrice[];
   measurements?: { format?: string; unit?: string };
+  mediaUrls?: string[];
   sellerName?: string;
 }
 
@@ -88,8 +89,10 @@ export class TottusAdapter implements StoreAdapter {
       ...(listPrice !== undefined ? { listPrice } : {}),
       ...(pumPrice !== undefined ? { unitPrice: pumPrice } : {}),
       ...(pumUnit ? { unit: pumUnit } : {}),
+      ...(p.measurements?.format ? { description: p.measurements.format } : {}),
       ...(listPrice !== undefined ? { offer: { type: "descuento" } } : {}),
       inStock: true,
+      ...(p.mediaUrls?.[0] ? { imageUrl: p.mediaUrls[0] } : {}),
       ...(p.url ? { url: p.url } : {}),
       fetchedAt: new Date().toISOString(),
     };
