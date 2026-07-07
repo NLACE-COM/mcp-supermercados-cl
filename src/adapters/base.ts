@@ -15,8 +15,8 @@ import type {
  * casi todo lo que hace conveniente la lista (precio club, historial,
  * beneficios por RUT) vive detrás del login.
  *
- * Fase 1 implementa la lectura pública. Los métodos con sesión quedan
- * declarados y lanzan NotImplementedError hasta la fase 2/3.
+ * No toda cadena implementa todo: los métodos sin soporte lanzan
+ * NotImplementedError con un mensaje que explica la limitación.
  */
 export interface StoreAdapter {
   readonly id: StoreId;

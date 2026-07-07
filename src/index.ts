@@ -7,7 +7,9 @@ async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // stdout es del protocolo MCP; los logs van a stderr.
-  console.error("mcp-supermercados-cl listo (stdio). Fase 1: Jumbo lectura pública.");
+  console.error(
+    "mcp-supermercados-cl listo (stdio). Cadenas: Jumbo, Santa Isabel, Unimarc, Tottus y Lider."
+  );
 }
 
 main().catch((err) => {
