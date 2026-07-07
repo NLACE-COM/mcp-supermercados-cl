@@ -24,12 +24,36 @@ export interface ResolvedItem {
   note?: string;
 }
 
+/** Un ajuste hecho para caber en el presupuesto: se bajó a una alternativa. */
+export interface BudgetAdjustment {
+  query: string;
+  from: string;
+  to: string;
+  /** CLP ahorrados con el cambio. */
+  saved: number;
+}
+
+export interface BudgetInfo {
+  /** Presupuesto máximo pedido (CLP). */
+  max: number;
+  /** true si, incluso tras ajustar, el total sigue por sobre el presupuesto. */
+  overBudget: boolean;
+  /** Cuánto se pasa (CLP), 0 si cabe. */
+  over: number;
+  /** Cambios a alternativas más baratas aplicados para caber. */
+  adjustments: BudgetAdjustment[];
+  /** Si aún se pasa: ítems más caros que convendría quitar (orden desc). */
+  dropSuggestions: Array<{ query: string; name: string; price: number }>;
+}
+
 export interface BuildListResult {
   items: ResolvedItem[];
   /** Suma de precios de los elegidos */
   total: number;
   /** Suma de ahorros por ofertas de los elegidos */
   totalSaving: number;
+  /** Presente si se pidió un presupuesto máximo (opts.maxBudget). */
+  budget?: BudgetInfo;
 }
 
 export interface ResolveOpts {
@@ -46,6 +70,12 @@ export interface ResolveOpts {
   onlyOffers?: boolean;
   /** Solo considerar productos con stock real (descarta sin stock). */
   onlyInStock?: boolean;
+  /**
+   * Presupuesto máximo en CLP. Si el total lo supera, se baja a alternativas
+   * más baratas por ítem (sin tocar los frecuentes del usuario) y, si aún se
+   * pasa, se sugiere qué quitar. No elimina ítems por su cuenta.
+   */
+  maxBudget?: number;
 }
 
 /** ¿El producto está en oferta? (precio vigente < precio normal, o tiene offer). */
@@ -182,9 +212,72 @@ export async function buildList(
     queries.length,
     "Ítems resueltos; calculando totales…"
   );
+  const budget =
+    opts.maxBudget !== undefined ? applyBudget(items, opts.maxBudget) : undefined;
+
   const total = items.reduce((sum, i) => sum + (i.chosen?.price ?? 0), 0);
   const totalSaving = items.reduce((sum, i) => sum + i.saving, 0);
-  return { items, total, totalSaving };
+  return { items, total, totalSaving, ...(budget ? { budget } : {}) };
+}
+
+/**
+ * Ajusta la lista para caber en el presupuesto: por cada ítem (salvo los
+ * frecuentes del usuario, que se respetan) baja a la alternativa más barata
+ * que ayude, priorizando los cambios de mayor ahorro. Muta `items` (cambia el
+ * elegido) y devuelve el detalle. Si aún se pasa, sugiere qué quitar.
+ */
+function applyBudget(items: ResolvedItem[], maxBudget: number): BudgetInfo {
+  const totalOf = () => items.reduce((s, i) => s + (i.chosen?.price ?? 0), 0);
+  const adjustments: BudgetAdjustment[] = [];
+
+  // Candidatos a bajar de precio: ítem con una alternativa más barata,
+  // ordenados por el mayor ahorro posible primero.
+  const swappable = items
+    .filter((i) => i.chosen && !i.fromFrequent)
+    .map((i) => {
+      const cheaper = i.alternatives
+        .filter((a) => a.price < (i.chosen as Product).price)
+        .sort((a, b) => a.price - b.price)[0];
+      return cheaper ? { item: i, cheaper } : null;
+    })
+    .filter((x): x is { item: ResolvedItem; cheaper: Product } => x !== null)
+    .sort(
+      (a, b) =>
+        (b.item.chosen as Product).price -
+        b.cheaper.price -
+        ((a.item.chosen as Product).price - a.cheaper.price)
+    );
+
+  for (const { item, cheaper } of swappable) {
+    if (totalOf() <= maxBudget) break;
+    const prev = item.chosen as Product;
+    const saved = prev.price - cheaper.price;
+    item.chosen = cheaper;
+    item.alternatives = [
+      prev,
+      ...item.alternatives.filter((a) => a.id !== cheaper.id),
+    ].slice(0, 3);
+    item.saving = cheaper.listPrice ? cheaper.listPrice - cheaper.price : 0;
+    item.note = "Ajustado a una alternativa más barata para caber en el presupuesto.";
+    adjustments.push({ query: item.query, from: prev.name, to: cheaper.name, saved });
+  }
+
+  const total = totalOf();
+  const over = Math.max(0, total - maxBudget);
+  const dropSuggestions =
+    over > 0
+      ? items
+          .filter((i) => i.chosen)
+          .sort((a, b) => (b.chosen as Product).price - (a.chosen as Product).price)
+          .slice(0, 3)
+          .map((i) => ({
+            query: i.query,
+            name: (i.chosen as Product).name,
+            price: (i.chosen as Product).price,
+          }))
+      : [];
+
+  return { max: maxBudget, overBudget: over > 0, over, adjustments, dropSuggestions };
 }
 
 /**

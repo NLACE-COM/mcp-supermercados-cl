@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { suggestSwaps } from "../core/listBuilder.js";
 import { getAdapter } from "../core/registry.js";
+import { toolError } from "../core/errors.js";
 
 export function registerSuggestSwaps(server: McpServer): void {
   server.registerTool(
@@ -52,16 +53,7 @@ export function registerSuggestSwaps(server: McpServer): void {
           ],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text",
-              text: `Error sugiriendo reemplazos en ${store}: ${message}`,
-            },
-          ],
-        };
+        return toolError(err, `Error sugiriendo reemplazos en ${store}`, store);
       }
     }
   );

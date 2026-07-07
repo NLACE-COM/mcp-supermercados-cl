@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getAdapter } from "../core/registry.js";
 import { browserFetchNote, jumboFetchSnippet } from "../adapters/cencosudBrowser.js";
+import { toolError } from "../core/errors.js";
 
 /**
  * Listas guardadas del usuario (fase 2). Como el token de Jumbo vive en el
@@ -70,16 +71,11 @@ export function registerGetSavedLists(server: McpServer): void {
           ],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text",
-              text: `No se pudieron obtener las listas guardadas en ${store}: ${message}`,
-            },
-          ],
-        };
+        return toolError(
+          err,
+          `No se pudieron obtener las listas guardadas en ${store}`,
+          store
+        );
       }
     }
   );

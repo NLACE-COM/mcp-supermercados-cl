@@ -5,7 +5,7 @@
 
 [![npm](https://img.shields.io/npm/v/mcp-supermercados-cl?logo=npm)](https://www.npmjs.com/package/mcp-supermercados-cl)
 ![node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
-![tests](https://img.shields.io/badge/tests-119%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-132%20passing-brightgreen)
 ![license](https://img.shields.io/badge/licencia-MIT-blue)
 
 El foco es **profundidad en la cadena donde tú ya compras** — precios club,
@@ -131,13 +131,13 @@ precio vigente, precio normal, precio socio, **precio por unidad normalizado**
 
 **Núcleo — armar la mejor lista con tu sesión:**
 
-| Tool                       | Qué hace                                                                                                                                                        |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `build_list`               | Convierte una lista en lenguaje natural en productos concretos. Prioriza tus frecuentes, mejor precio por unidad y ofertas. Flags `onlyOffers` / `onlyInStock`. |
-| `suggest_swaps`            | Reemplazos convenientes por precio por unidad. Con `preferNatural`: alternativas de precio similar con menos ingredientes.                                      |
-| `get_frequent_purchases`   | Tus productos habituales, con precio Prime (requiere sesión).                                                                                                   |
-| `get_saved_lists`          | Tus listas guardadas (requiere sesión).                                                                                                                         |
-| `add_to_cart` / `get_cart` | Deja la lista en el carro de Jumbo; total, ahorro y ahorro Prime.                                                                                               |
+| Tool                       | Qué hace                                                                                                                                                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build_list`               | Convierte una lista en lenguaje natural en productos concretos. Prioriza tus frecuentes, mejor precio por unidad y ofertas. Flags `onlyOffers` / `onlyInStock` y `maxBudget` (ajusta a alternativas más baratas para caber). Incluye resumen formateado. |
+| `suggest_swaps`            | Reemplazos convenientes por precio por unidad. Con `preferNatural`: alternativas de precio similar con menos ingredientes.                                                                                                                               |
+| `get_frequent_purchases`   | Tus productos habituales, con precio Prime (requiere sesión).                                                                                                                                                                                            |
+| `get_saved_lists`          | Tus listas guardadas (requiere sesión).                                                                                                                                                                                                                  |
+| `add_to_cart` / `get_cart` | Deja la lista en el carro de Jumbo; total, ahorro y ahorro Prime.                                                                                                                                                                                        |
 
 **Lectura de catálogo:**
 
@@ -150,10 +150,23 @@ precio vigente, precio normal, precio socio, **precio por unidad normalizado**
 
 **Comparación y diagnóstico:**
 
-| Tool             | Qué hace                                                   |
-| ---------------- | ---------------------------------------------------------- |
-| `compare_stores` | Total de una lista en varias cadenas; marca la más barata. |
-| `adapter_status` | Qué cadenas responden ahora y con qué latencia.            |
+| Tool              | Qué hace                                                                                            |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `compare_stores`  | Total de una lista en varias cadenas; marca la más barata y advierte si compara formatos distintos. |
+| `discover_branch` | Descubre tu sucursal (branchId) leyéndola del navegador, para no pedírtela a mano.                  |
+| `adapter_status`  | Qué cadenas responden ahora y con qué latencia.                                                     |
+
+### 💬 Prompts guiados
+
+Para no adivinar qué pedir, el servidor expone plantillas que tu cliente MCP
+muestra como sugerencias: **`armar_lista`** (con presupuesto opcional),
+**`conectar_sesion`**, **`comparar_carro`** y **`ofertas_frecuentes`**. El
+servidor además trae `instructions` para que el modelo te guíe en el primer uso
+(qué cadena, cuándo pedir sesión, cómo leer los errores).
+
+Los errores vienen **accionables**: cada uno trae un campo `action` con el
+siguiente paso concreto (re-loguearte, reintentar, usar IP residencial…) en vez
+de un mensaje técnico.
 
 ---
 
@@ -187,7 +200,7 @@ falso positivo.
 ## 🧪 Desarrollo y tests
 
 ```bash
-npm test           # tests de contrato con fixtures reales (sin red) — 119 tests
+npm test           # tests de contrato con fixtures reales (sin red) — 132 tests
 npm run test:live  # smoke contra los sitios reales (opt-in, LIVE=1)
 npm run typecheck  # tsc --noEmit
 npm run lint       # ESLint

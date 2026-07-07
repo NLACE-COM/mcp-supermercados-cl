@@ -3,6 +3,8 @@ import { z } from "zod";
 import { dataSession } from "../adapters/session.js";
 import { buildList, loadFrequent } from "../core/listBuilder.js";
 import { getAdapter } from "../core/registry.js";
+import { toolError } from "../core/errors.js";
+import { formatClp, savingPct } from "../core/format.js";
 import type { FrequentCard } from "../core/types.js";
 import { progressNotifier } from "./progress.js";
 
@@ -43,6 +45,15 @@ export function registerBuildList(server: McpServer): void {
           .boolean()
           .default(false)
           .describe("true = solo productos con stock real."),
+        maxBudget: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe(
+            "Presupuesto máximo en CLP. Si el total lo supera, baja a alternativas más baratas " +
+              "(sin tocar tus frecuentes) y, si aún se pasa, sugiere qué quitar. No elimina ítems solo."
+          ),
         frequentCards: z
           .array(
             z.object({
@@ -63,7 +74,7 @@ export function registerBuildList(server: McpServer): void {
       },
     },
     async (
-      { store, items, branchId, onlyOffers, onlyInStock, frequentCards },
+      { store, items, branchId, onlyOffers, onlyInStock, maxBudget, frequentCards },
       extra
     ) => {
       const notify = progressNotifier(extra);
@@ -79,9 +90,28 @@ export function registerBuildList(server: McpServer): void {
         const result = await buildList(
           adapter,
           items,
-          { branchId, frequentProducts, onlyOffers, onlyInStock },
+          { branchId, frequentProducts, onlyOffers, onlyInStock, maxBudget },
           notify
         );
+        const found = result.items.filter((i) => i.chosen).length;
+        const onOffer = result.items.filter((i) => i.saving > 0).length;
+        const summary = {
+          totalFormatted: formatClp(result.total),
+          savingFormatted: formatClp(result.totalSaving),
+          savingPct: savingPct(result.totalSaving, result.total + result.totalSaving),
+          itemsFound: found,
+          itemsMissing: result.items.length - found,
+          itemsOnOffer: onOffer,
+          ...(result.budget
+            ? {
+                budget: formatClp(result.budget.max),
+                overBudget: result.budget.overBudget,
+                over: result.budget.overBudget
+                  ? formatClp(result.budget.over)
+                  : undefined,
+              }
+            : {}),
+        };
         return {
           content: [
             {
@@ -90,8 +120,10 @@ export function registerBuildList(server: McpServer): void {
                 {
                   store,
                   usedFrequent: frequentProducts.length > 0,
+                  summary,
                   total: result.total,
                   totalSaving: result.totalSaving,
+                  budget: result.budget,
                   items: result.items,
                 },
                 null,
@@ -101,13 +133,7 @@ export function registerBuildList(server: McpServer): void {
           ],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            { type: "text", text: `Error armando la lista en ${store}: ${message}` },
-          ],
-        };
+        return toolError(err, `Error armando la lista en ${store}`, store);
       }
     }
   );

@@ -329,3 +329,85 @@ describe("suggestSwaps", () => {
     expect(result.swaps[0].ingredients).toEqual(["avena integral"]);
   });
 });
+
+describe("buildList con presupuesto", () => {
+  it("baja a alternativas más baratas para caber en el presupuesto", async () => {
+    // El de mejor precio por unidad (formato grande) es el elegido inicial,
+    // pero cuesta más en total; con presupuesto se baja al de menor precio.
+    const adapter = fakeAdapter({
+      arroz: [
+        product({
+          id: "arroz-grande",
+          name: "Arroz 5kg",
+          price: 4000,
+          unitPrice: 800,
+          unit: "kg",
+        }),
+        product({
+          id: "arroz-chico",
+          name: "Arroz 1kg",
+          price: 1200,
+          unitPrice: 1200,
+          unit: "kg",
+        }),
+      ],
+    });
+    // Sin presupuesto elige el de mejor $/kg (el grande, $4000).
+    const base = await buildList(adapter, ["arroz"], {});
+    expect(base.items[0].chosen?.id).toBe("arroz-grande");
+    // Con presupuesto $1500 baja al de menor precio absoluto ($1200).
+    const result = await buildList(adapter, ["arroz"], { maxBudget: 1500 });
+    expect(result.budget?.overBudget).toBe(false);
+    expect(result.total).toBe(1200);
+    expect(result.budget?.adjustments[0]?.to).toBe("Arroz 1kg");
+    expect(result.items[0].chosen?.id).toBe("arroz-chico");
+  });
+
+  it("si aún se pasa, marca overBudget y sugiere qué quitar", async () => {
+    const adapter = fakeAdapter({
+      lomo: [
+        product({
+          id: "lomo",
+          name: "Lomo caro",
+          price: 9000,
+          unitPrice: 9000,
+          unit: "kg",
+        }),
+      ],
+    });
+    const result = await buildList(adapter, ["lomo"], { maxBudget: 5000 });
+    expect(result.budget?.overBudget).toBe(true);
+    expect(result.budget?.over).toBe(4000);
+    expect(result.budget?.dropSuggestions[0]?.name).toBe("Lomo caro");
+  });
+
+  it("no toca los productos frecuentes del usuario", async () => {
+    const frecuente = product({
+      id: "leche-fav",
+      name: "Leche entera",
+      price: 1500,
+      unitPrice: 1500,
+      unit: "lt",
+      inStock: true,
+    });
+    const adapter = fakeAdapter({
+      leche: [
+        frecuente,
+        product({
+          id: "leche-barata",
+          name: "Leche entera barata",
+          price: 900,
+          unitPrice: 900,
+          unit: "lt",
+        }),
+      ],
+    });
+    const result = await buildList(adapter, ["leche"], {
+      maxBudget: 1000,
+      frequentProducts: [frecuente],
+    });
+    // Es frecuente => se respeta aunque se pase del presupuesto.
+    expect(result.items[0].chosen?.id).toBe("leche-fav");
+    expect(result.budget?.overBudget).toBe(true);
+  });
+});

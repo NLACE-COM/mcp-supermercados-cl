@@ -91,6 +91,32 @@ export function jumboFrequentCardsSnippet(): string {
 }
 
 /**
+ * Snippet para descubrir la sucursal (branchId, ej. "jumboclj512") desde el
+ * navegador, sin que el usuario tenga que conocer el código. La sucursal vive
+ * en `delivery-method-state` (localStorage) cuando el usuario ya eligió su
+ * modo de entrega/comuna; como respaldo, se escanea el resto del storage y las
+ * cookies por el patrón de branchId. Si no hay nada, devuelve found:false con
+ * una pista (el usuario debe elegir su comuna/tienda en el sitio primero).
+ */
+export function jumboDiscoverBranchSnippet(): string {
+  return `// Ejecutar en https://www.jumbo.cl ya con tu comuna/tienda elegida.
+(() => {
+  const PAT = /[a-z]{2,}cl[a-z]?\\d{2,}/gi;
+  const found = new Set();
+  const push = (v) => { for (const m of String(v||"").match(PAT) || []) found.add(m); };
+  // 1) delivery-method-state: donde vive la sucursal elegida.
+  try { push(localStorage.getItem("delivery-method-state")); } catch {}
+  // 2) respaldo: cualquier valor con forma de branchId en storage/cookies.
+  try { for (const k of Object.keys(localStorage)) push(localStorage.getItem(k)); } catch {}
+  try { push(document.cookie); } catch {}
+  const branches = [...found];
+  return branches.length
+    ? { found: true, branchId: branches[0], candidates: branches }
+    : { found: false, hint: "Elige tu comuna o tienda en jumbo.cl (modo de entrega) y vuelve a intentar." };
+})()`;
+}
+
+/**
  * Instrucción estándar para el cliente MCP: cómo obtener el JSON sin que el
  * servidor toque credenciales, y qué NO hacer (raspar React/DOM).
  */

@@ -4,6 +4,33 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-07-07
+
+Versión enfocada en **experiencia del usuario**.
+
+### Added
+
+- **Prompts guiados** (`armar_lista`, `conectar_sesion`, `comparar_carro`,
+  `ofertas_frecuentes`): plantillas que el cliente MCP muestra como sugerencias,
+  para que el usuario no tenga que adivinar qué pedir.
+- **`instructions` del servidor**: guía al modelo sobre cómo conducir la
+  conversación (qué cadena, cuándo pedir sesión, cómo leer errores).
+- **`discover_branch`**: descubre la sucursal (branchId) leyéndola del navegador
+  (`delivery-method-state`), para no pedirle el código técnico al usuario.
+- **Presupuesto en `build_list`** (`maxBudget`): si el total se pasa, baja a
+  alternativas más baratas (sin tocar tus frecuentes) y, si aún se pasa, sugiere
+  qué quitar.
+- **Errores accionables** (`src/core/errors.ts`): cada error trae un campo
+  `action` con el siguiente paso concreto (re-login, reintentar, IP residencial)
+  en vez de un mensaje técnico.
+- **Resumen human-friendly** en `build_list`: totales formateados (`$12.345`),
+  porcentaje de ahorro y conteo de ítems en oferta.
+
+### Changed
+
+- Todas las tools con errores ahora responden con el formato accionable.
+- Documentación y badges actualizados. 132 tests.
+
 ## [1.1.0] - 2026-07-07
 
 ### Added
@@ -81,6 +108,7 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.2.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.2.0
 [1.1.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.1.0
 [1.0.3]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.0.3
 [1.0.2]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.0.2

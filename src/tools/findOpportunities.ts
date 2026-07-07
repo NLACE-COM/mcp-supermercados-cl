@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { findOpportunities } from "../core/opportunities.js";
+import { toolError } from "../core/errors.js";
 
 /**
  * find_opportunities: las mejores oportunidades del momento (mayor descuento
@@ -90,16 +91,11 @@ export function registerFindOpportunities(server: McpServer): void {
           ],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text",
-              text: `No se pudieron obtener oportunidades en ${store}: ${message}`,
-            },
-          ],
-        };
+        return toolError(
+          err,
+          `No se pudieron obtener oportunidades en ${store}`,
+          store
+        );
       }
     }
   );

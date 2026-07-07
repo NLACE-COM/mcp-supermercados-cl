@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getAdapter } from "../core/registry.js";
+import { toolError } from "../core/errors.js";
 
 export function registerGetProduct(server: McpServer): void {
   server.registerTool(
@@ -54,16 +55,7 @@ export function registerGetProduct(server: McpServer): void {
           content: [{ type: "text", text: JSON.stringify(product, null, 2) }],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text",
-              text: `Error obteniendo "${idOrUrl}" en ${store}: ${message}`,
-            },
-          ],
-        };
+        return toolError(err, `Error obteniendo "${idOrUrl}" en ${store}`, store);
       }
     }
   );

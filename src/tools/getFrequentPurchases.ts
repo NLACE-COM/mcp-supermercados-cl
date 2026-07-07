@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdapter } from "../core/registry.js";
 import { dataSession } from "../adapters/session.js";
 import { jumboFrequentCardsSnippet } from "../adapters/cencosudBrowser.js";
+import { toolError } from "../core/errors.js";
 import type { FrequentCard } from "../core/types.js";
 
 /**
@@ -91,16 +92,11 @@ export function registerGetFrequentPurchases(server: McpServer): void {
           ],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text",
-              text: `No se pudieron obtener los productos frecuentes en ${store}: ${message}`,
-            },
-          ],
-        };
+        return toolError(
+          err,
+          `No se pudieron obtener los productos frecuentes en ${store}`,
+          store
+        );
       }
     }
   );

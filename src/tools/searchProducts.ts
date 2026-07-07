@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { availableStores, getAdapter } from "../core/registry.js";
+import { toolError } from "../core/errors.js";
 
 /**
  * Tool de lectura de catálogo. Con sesión (fase 2) devolverá el precio
@@ -118,16 +119,11 @@ export function registerSearchProducts(server: McpServer): void {
           ],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text",
-              text: `Error buscando "${query}" en ${store}: ${message}. Cadenas disponibles: ${availableStores().join(", ")}.`,
-            },
-          ],
-        };
+        return toolError(
+          err,
+          `Error buscando "${query}" en ${store}. Cadenas disponibles: ${availableStores().join(", ")}`,
+          store
+        );
       }
     }
   );

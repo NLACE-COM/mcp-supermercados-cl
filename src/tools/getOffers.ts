@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getAdapter } from "../core/registry.js";
+import { toolError } from "../core/errors.js";
 
 export function registerGetOffers(server: McpServer): void {
   server.registerTool(
@@ -70,16 +71,7 @@ export function registerGetOffers(server: McpServer): void {
           ],
         };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text",
-              text: `Error obteniendo ofertas de ${store}: ${message}`,
-            },
-          ],
-        };
+        return toolError(err, `Error obteniendo ofertas de ${store}`, store);
       }
     }
   );

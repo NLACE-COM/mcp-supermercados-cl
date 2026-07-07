@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  jumboDiscoverBranchSnippet,
   jumboFetchSnippet,
   jumboFrequentCardsSnippet,
   jumboMutateSnippet,
@@ -47,5 +48,14 @@ describe("snippets de navegador Cencosud", () => {
     for (const field of ["id", "name", "dataPrice", "href", "tachado", "prime"]) {
       expect(code).toContain(field);
     }
+  });
+
+  it("jumboDiscoverBranchSnippet lee la sucursal del navegador", () => {
+    const code = jumboDiscoverBranchSnippet();
+    expect(isParseableAsyncBody(code)).toBe(true);
+    expect(code).toContain("delivery-method-state");
+    // Devuelve found:true con branchId, o found:false con una pista.
+    expect(code).toContain("found");
+    expect(code).toContain("branchId");
   });
 });
