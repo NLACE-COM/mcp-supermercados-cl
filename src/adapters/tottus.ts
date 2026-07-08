@@ -25,6 +25,7 @@ import { NotImplementedError, type StoreAdapter } from "./base.js";
  */
 
 const BASE = "https://www.tottus.cl";
+const NEXT_DATA_MARKER = '<script id="__NEXT_DATA__" type="application/json">';
 
 interface TottusPrice {
   type?: string;
@@ -56,13 +57,23 @@ export class TottusAdapter implements StoreAdapter {
   async searchProducts(query: string, opts: SearchOpts = {}): Promise<Product[]> {
     const limit = Math.min(Math.max(opts.limit ?? 10, 1), 48);
     const page = Math.max(opts.page ?? 1, 1);
-    const url = `${BASE}/tottus-cl/buscar?Ntt=${encodeURIComponent(query)}${page > 1 ? `&page=${page}&store=to_com` : ""}`;
-    const html = await this.http.getText(url);
+    const html = await this.fetchSearchHtml(query, page, opts.session);
     const results = extractTottusResults(html);
     return results
       .slice(0, limit)
       .map((p) => this.mapProduct(p))
       .filter((p): p is Product => p !== null);
+  }
+
+  /** Usa el puente de navegador de la sesión si está, si no HTTP directo. */
+  private async fetchSearchHtml(
+    query: string,
+    page: number,
+    session?: Session
+  ): Promise<string> {
+    const path = `/tottus-cl/buscar?Ntt=${encodeURIComponent(query)}${page > 1 ? `&page=${page}&store=to_com` : ""}`;
+    if (session?.fetchAuthedHtml) return session.fetchAuthedHtml(path);
+    return this.http.getText(`${BASE}${path}`);
   }
 
   /** Público para el test de contrato con la fixture. */
@@ -150,10 +161,9 @@ export class TottusAdapter implements StoreAdapter {
 
 /** Extrae props.pageProps.results del __NEXT_DATA__ del HTML SSR. */
 export function extractTottusResults(html: string): TottusProduct[] {
-  const marker = '<script id="__NEXT_DATA__" type="application/json">';
-  const start = html.indexOf(marker);
+  const start = html.indexOf(NEXT_DATA_MARKER);
   if (start === -1) return [];
-  const from = start + marker.length;
+  const from = start + NEXT_DATA_MARKER.length;
   const end = html.indexOf("</script>", from);
   if (end === -1) return [];
   try {
@@ -163,4 +173,18 @@ export function extractTottusResults(html: string): TottusProduct[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * Normaliza lo que entrega el navegador para el puente de búsqueda de Tottus.
+ * Acepta el HTML completo de la página (con `<script id="__NEXT_DATA__">`) o
+ * solo el JSON de `__NEXT_DATA__`, y devuelve siempre HTML parseable por
+ * `extractTottusResults`. Es el fallback cuando el 403 antibot bloquea el fetch
+ * directo del servidor: el usuario abre la búsqueda en su navegador real (que
+ * sí pasa) y nos pasa ese contenido.
+ */
+export function wrapTottusHtml(browserContent: string): string {
+  const s = browserContent.trim();
+  if (s.includes('id="__NEXT_DATA__"')) return s;
+  return `${NEXT_DATA_MARKER}${s}</script>`;
 }

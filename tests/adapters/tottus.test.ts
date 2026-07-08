@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { TottusAdapter, extractTottusResults } from "../../src/adapters/tottus.js";
+import {
+  TottusAdapter,
+  extractTottusResults,
+  wrapTottusHtml,
+} from "../../src/adapters/tottus.js";
 import { ProductSchema } from "../../src/core/types.js";
 import type { HttpFetcher } from "../../src/http/client.js";
 
@@ -55,6 +59,43 @@ describe("TottusAdapter · mapProduct", () => {
     const products = await new TottusAdapter(http).searchProducts("arroz");
     expect(products.length).toBe(2);
     for (const p of products) ProductSchema.parse(p);
+  });
+});
+
+describe("wrapTottusHtml · puente de navegador para búsqueda", () => {
+  const nextData = JSON.stringify({
+    props: { pageProps: { results: fixture.products } },
+  });
+
+  it("envuelve el JSON de __NEXT_DATA__ y queda parseable", () => {
+    expect(extractTottusResults(wrapTottusHtml(nextData))).toHaveLength(2);
+  });
+
+  it("deja pasar el HTML completo tal cual", () => {
+    const full = `<html><body><script id="__NEXT_DATA__" type="application/json">${nextData}</script></body></html>`;
+    expect(wrapTottusHtml(full)).toBe(full);
+    expect(extractTottusResults(wrapTottusHtml(full))).toHaveLength(2);
+  });
+
+  it("searchProducts consume el HTML del navegador vía sesión (sin tocar la red)", async () => {
+    const http: HttpFetcher = {
+      async getText(): Promise<string> {
+        throw new Error("no debería tocar la red");
+      },
+      async getJson<T>(): Promise<T> {
+        throw new Error("no");
+      },
+      async postJson<T>(): Promise<T> {
+        throw new Error("no");
+      },
+    };
+    const products = await new TottusAdapter(http).searchProducts("arroz", {
+      session: {
+        store: "tottus",
+        fetchAuthedHtml: async () => wrapTottusHtml(nextData),
+      },
+    });
+    expect(products).toHaveLength(2);
   });
 });
 
