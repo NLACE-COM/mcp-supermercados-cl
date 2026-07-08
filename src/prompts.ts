@@ -103,6 +103,56 @@ export function registerPrompts(server: McpServer): void {
   );
 
   server.registerPrompt(
+    "super_eficiente",
+    {
+      title: "Armar el súper más barato (repartido por cadena)",
+      description:
+        "Por cada ítem elige la cadena más barata, arma el carro donde se puede (Jumbo) y " +
+        "deja lista + links para el resto. Acepta lista pegada, Excel o audio (transcríbelo).",
+      argsSchema: {
+        items: z
+          .string()
+          .describe(
+            "Ítems (uno por línea o separados por coma). También sirve pegar una lista/Excel " +
+              "o transcribir un audio del usuario."
+          ),
+        presupuesto: z
+          .string()
+          .optional()
+          .describe('Presupuesto máximo total en CLP, ej. "40000". Opcional.'),
+        incluir_tottus_lider: z
+          .enum(["si", "no"])
+          .optional()
+          .describe('"si" para incluir Tottus/Lider vía navegador (más lento). Por defecto no.'),
+      },
+    },
+    ({ items, presupuesto, incluir_tottus_lider }) => {
+      const budget = presupuesto
+        ? ` Objetivo: no pasar de $${presupuesto} CLP en total; si te pasas, dime qué bajar.`
+        : "";
+      const extra =
+        incluir_tottus_lider === "si"
+          ? " Incluye también Tottus y Líder: para esas, con search_products usa el puente de " +
+            "navegador (abre la búsqueda en el navegador, toma el __NEXT_DATA__ y pásalo como browserHtml), " +
+            "y suma sus precios a la comparación por ítem."
+          : "";
+      return userMessage(
+        `Arma mi súper de la forma MÁS BARATA repartiendo la compra entre cadenas. Ítems:\n${items}\n\n` +
+          `Flujo:\n` +
+          `1) Usa build_cheapest_basket con estos ítems (elige por ítem la cadena más barata por precio/unidad).${extra}\n` +
+          `2) Ítems genéricos con varias versiones (ej. "leche"): si tengo sesión, mira mis frecuentes ` +
+          `(get_frequent_purchases) para elegir lo que suelo comprar; si no, pregúntame la versión antes de decidir.\n` +
+          `3) Arma el carro: para lo que quede más barato en Jumbo, agrégalo con add_to_cart (necesitas mi ` +
+          `sucursal —usa discover_branch— y mi sesión; dame el browserSnippet a ejecutar). Para las otras cadenas ` +
+          `no hay carro: déjame la lista con los links (url) de cada producto para agregar con un clic.${budget}\n` +
+          `4) Mándame al final el resumen: qué comprar en cada cadena, subtotal por cadena, total de la canasta, ` +
+          `cuánto ahorro vs comprar todo en una sola, y dónde quedó cada carro/lista. Avísame de los ítems en ` +
+          `mixedFormatItems (formatos distintos) y de los que no se encontraron (missing).`
+      );
+    }
+  );
+
+  server.registerPrompt(
     "ofertas_frecuentes",
     {
       title: "Ofertas de lo que suelo comprar",
