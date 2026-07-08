@@ -22,8 +22,26 @@ describe("chooseCheapestBasket", () => {
           matched: 2,
           total: 2290,
           items: [
-            { query: "leche", product: prod({ store: "jumbo", name: "Leche J", price: 1000, unitPrice: 1000, unit: "lt" }) },
-            { query: "arroz", product: prod({ store: "jumbo", name: "Arroz J", price: 1290, unitPrice: 1290, unit: "kg" }) },
+            {
+              query: "leche",
+              product: prod({
+                store: "jumbo",
+                name: "Leche J",
+                price: 1000,
+                unitPrice: 1000,
+                unit: "lt",
+              }),
+            },
+            {
+              query: "arroz",
+              product: prod({
+                store: "jumbo",
+                name: "Arroz J",
+                price: 1290,
+                unitPrice: 1290,
+                unit: "kg",
+              }),
+            },
           ],
         },
         {
@@ -31,8 +49,26 @@ describe("chooseCheapestBasket", () => {
           matched: 2,
           total: 2350,
           items: [
-            { query: "leche", product: prod({ store: "unimarc", name: "Leche U", price: 950, unitPrice: 950, unit: "lt" }) },
-            { query: "arroz", product: prod({ store: "unimarc", name: "Arroz U", price: 1400, unitPrice: 1400, unit: "kg" }) },
+            {
+              query: "leche",
+              product: prod({
+                store: "unimarc",
+                name: "Leche U",
+                price: 950,
+                unitPrice: 950,
+                unit: "lt",
+              }),
+            },
+            {
+              query: "arroz",
+              product: prod({
+                store: "unimarc",
+                name: "Arroz U",
+                price: 1400,
+                unitPrice: 1400,
+                unit: "kg",
+              }),
+            },
           ],
         },
       ],
@@ -69,7 +105,12 @@ describe("chooseCheapestBasket", () => {
       items: ["pan"],
       stores: [
         { store: "tottus", matched: 0, total: 0, items: [], error: "HTTP 403" },
-        { store: "jumbo", matched: 0, total: 0, items: [{ query: "pan", product: null }] },
+        {
+          store: "jumbo",
+          matched: 0,
+          total: 0,
+          items: [{ query: "pan", product: null }],
+        },
       ],
       cheapest: undefined,
       comparability: [{ query: "pan", confidence: "similar", chosen: [] }],
@@ -93,7 +134,17 @@ describe("chooseCheapestBasket", () => {
           store: "jumbo",
           matched: 1,
           total: 1000,
-          items: [{ query: "leche", product: prod({ store: "jumbo", price: 1000, unitPrice: 1000, unit: "lt" }) }],
+          items: [
+            {
+              query: "leche",
+              product: prod({
+                store: "jumbo",
+                price: 1000,
+                unitPrice: 1000,
+                unit: "lt",
+              }),
+            },
+          ],
         },
         {
           store: "unimarc",

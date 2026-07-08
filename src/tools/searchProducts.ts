@@ -15,7 +15,10 @@ import { wrapTottusHtml } from "../adapters/tottus.js";
 const BROWSER_BRIDGE: Partial<
   Record<
     string,
-    { wrap: (html: string) => string; searchUrl: (query: string, page: number) => string }
+    {
+      wrap: (html: string) => string;
+      searchUrl: (query: string, page: number) => string;
+    }
   >
 > = {
   lider: {

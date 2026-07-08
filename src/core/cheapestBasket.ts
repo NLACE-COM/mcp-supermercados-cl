@@ -76,16 +76,21 @@ export function chooseCheapestBasket(cmp: CompareResult): CheapestBasket {
     // por precio absoluto (métrica consistente por ítem, sin mezclar peras y kilos).
     const allHaveUnit = candidates.every((c) => c.product.unitPrice !== undefined);
     const by: "unitPrice" | "price" = allHaveUnit ? "unitPrice" : "price";
-    const value = (p: Product) => (by === "unitPrice" ? (p.unitPrice ?? p.price) : p.price);
+    const value = (p: Product) =>
+      by === "unitPrice" ? (p.unitPrice ?? p.price) : p.price;
 
-    const best = candidates.reduce((a, b) => (value(a.product) <= value(b.product) ? a : b));
+    const best = candidates.reduce((a, b) =>
+      value(a.product) <= value(b.product) ? a : b
+    );
     const alternatives = candidates
       .filter((c) => c.store !== best.store)
       .map((c) => ({
         store: c.store,
         name: c.product.name,
         price: c.product.price,
-        ...(c.product.unitPrice !== undefined ? { unitPrice: c.product.unitPrice } : {}),
+        ...(c.product.unitPrice !== undefined
+          ? { unitPrice: c.product.unitPrice }
+          : {}),
         ...(c.product.unit ? { unit: c.product.unit } : {}),
       }));
 
@@ -94,7 +99,9 @@ export function chooseCheapestBasket(cmp: CompareResult): CheapestBasket {
       store: best.store,
       name: best.product.name,
       price: best.product.price,
-      ...(best.product.unitPrice !== undefined ? { unitPrice: best.product.unitPrice } : {}),
+      ...(best.product.unitPrice !== undefined
+        ? { unitPrice: best.product.unitPrice }
+        : {}),
       ...(best.product.unit ? { unit: best.product.unit } : {}),
       ...(best.product.url ? { url: best.product.url } : {}),
       by,

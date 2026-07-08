@@ -123,7 +123,9 @@ export function registerPrompts(server: McpServer): void {
         incluir_tottus_lider: z
           .enum(["si", "no"])
           .optional()
-          .describe('"si" para incluir Tottus/Lider vía navegador (más lento). Por defecto no.'),
+          .describe(
+            '"si" para incluir Tottus/Lider vía navegador (más lento). Por defecto no.'
+          ),
       },
     },
     ({ items, presupuesto, incluir_tottus_lider }) => {

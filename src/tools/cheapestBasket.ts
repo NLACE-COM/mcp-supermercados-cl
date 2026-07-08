@@ -38,7 +38,9 @@ export function registerCheapestBasket(server: McpServer): void {
           .array(z.string().min(1))
           .min(1)
           .max(30)
-          .describe('Ítems en texto libre, ej. ["leche colun 1L", "pan de molde", "arroz 1kg"].'),
+          .describe(
+            'Ítems en texto libre, ej. ["leche colun 1L", "pan de molde", "arroz 1kg"].'
+          ),
         stores: z
           .array(z.enum(["jumbo", "santaisabel", "unimarc", "tottus", "lider"]))
           .optional()
@@ -48,7 +50,9 @@ export function registerCheapestBasket(server: McpServer): void {
         branchId: z
           .string()
           .optional()
-          .describe('Sucursal para precios locales de cadenas Cencosud, ej. "jumboclj512".'),
+          .describe(
+            'Sucursal para precios locales de cadenas Cencosud, ej. "jumboclj512".'
+          ),
       },
     },
     async ({ items, stores, branchId }) => {
