@@ -45,6 +45,20 @@ export function isLiderBlockedHtml(html: string): boolean {
   return html.includes("Robot or human") || !html.includes(NEXT_DATA_MARKER);
 }
 
+/**
+ * Normaliza lo que entrega el navegador para el puente de búsqueda de Líder.
+ * Acepta el HTML completo de la página (con `<script id="__NEXT_DATA__">`) o
+ * solo el JSON de `__NEXT_DATA__`, y devuelve siempre HTML parseable por
+ * `extractLiderProducts`. Es el fallback cuando PerimeterX bloquea el fetch
+ * directo del servidor: el usuario abre la búsqueda en su navegador real (que
+ * sí pasa el antibot) y nos pasa ese contenido.
+ */
+export function wrapLiderHtml(browserContent: string): string {
+  const s = browserContent.trim();
+  if (s.includes('id="__NEXT_DATA__"')) return s;
+  return `${NEXT_DATA_MARKER}${s}</script>`;
+}
+
 interface LiderPriceInfo {
   itemPrice?: string;
   linePrice?: string;

@@ -1,8 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { availableStores, getAdapter } from "../core/registry.js";
-import { toolError } from "../core/errors.js";
+import { toActionableError, toolError } from "../core/errors.js";
 import { priceScopeInfo } from "../core/format.js";
+import { wrapLiderHtml } from "../adapters/lider.js";
 
 /**
  * Tool de lectura de catálogo. Con sesión (fase 2) devolverá el precio
@@ -70,6 +71,16 @@ export function registerSearchProducts(server: McpServer): void {
           .boolean()
           .default(false)
           .describe("true = solo productos con stock real."),
+        browserHtml: z
+          .string()
+          .optional()
+          .describe(
+            "Solo Líder: HTML de la página de búsqueda (o el JSON de __NEXT_DATA__) " +
+              "obtenido en un navegador real que ya pasó el antibot PerimeterX. Si se " +
+              "entrega, se parsea eso en vez de hacer el fetch (que Líder bloquea por " +
+              "fingerprint del cliente). Flujo: llamar sin browserHtml → se devuelve " +
+              "openUrl+browserSnippet → ejecutarlo en el navegador → reintentar con browserHtml."
+          ),
       },
     },
     async ({
@@ -82,14 +93,23 @@ export function registerSearchProducts(server: McpServer): void {
       minPrice,
       sortBy,
       inStockOnly,
+      browserHtml,
     }) => {
       try {
         const adapter = getAdapter(store);
+        // Líder bloquea el fetch del servidor (PerimeterX). Si el usuario trae el
+        // HTML desde un navegador real, lo usamos vía el puente de sesión que el
+        // adaptador ya soporta (session.fetchAuthedHtml).
+        const session =
+          store === "lider" && browserHtml
+            ? { store, fetchAuthedHtml: async () => wrapLiderHtml(browserHtml) }
+            : undefined;
         // Pedimos un poco más para que el filtro/orden tenga de dónde elegir.
         const raw = await adapter.searchProducts(query, {
           limit: maxPrice || minPrice || inStockOnly ? Math.min(50, limit * 3) : limit,
           page,
           branchId,
+          ...(session ? { session } : {}),
         });
 
         let products = raw;
@@ -126,6 +146,42 @@ export function registerSearchProducts(server: McpServer): void {
           ],
         };
       } catch (err) {
+        // Líder: si el fetch directo cayó en el antibot y no nos pasaron el HTML
+        // del navegador, guiamos el puente en vez de solo reportar el error.
+        if (
+          store === "lider" &&
+          !browserHtml &&
+          toActionableError(err, "lider").kind === "blocked"
+        ) {
+          const path = `/search?query=${encodeURIComponent(query)}${
+            page > 1 ? `&page=${page}` : ""
+          }`;
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(
+                  {
+                    store,
+                    query,
+                    blocked: true,
+                    note:
+                      "Líder bloquea el fetch del servidor (PerimeterX/F5): no es tu IP, es el " +
+                      "fingerprint del cliente. Abre la búsqueda en un navegador real (que ya pasó " +
+                      "el desafío) y reintenta pasando browserHtml.",
+                    openUrl: `https://super.lider.cl${path}`,
+                    browserSnippet:
+                      "document.getElementById('__NEXT_DATA__')?.textContent || document.documentElement.outerHTML",
+                    retryWith:
+                      "Reintenta search_products con store='lider', la misma query y browserHtml = lo que devolvió el snippet.",
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        }
         return toolError(
           err,
           `Error buscando "${query}" en ${store}. Cadenas disponibles: ${availableStores().join(", ")}`,
