@@ -13,4 +13,11 @@ describe("PlaywrightBridge sin Playwright instalado", () => {
       /Playwright no está instalado/
     );
   });
+
+  it("fetchSsrHtml también guía a instalar Playwright", async () => {
+    const bridge = new PlaywrightBridge({ userDataDir: "/tmp/perfil-inexistente" });
+    await expect(
+      bridge.fetchSsrHtml("https://super.lider.cl/search?query=arroz")
+    ).rejects.toThrow(/Playwright no está instalado/);
+  });
 });

@@ -14,8 +14,11 @@ import type { BrowserBridge } from "./session.js";
  *     npm install playwright
  *     npx playwright install chromium   # o usa channel "chrome"
  *
- * Este helper corre junto al cliente (no dentro del servidor MCP por stdio):
- * úsalo en un script Node para obtener el JSON/HTML y pasárselo a las tools.
+ * El servidor MCP corre en la máquina del usuario (IP residencial), así que
+ * puede lanzar este puente directamente: `getConfiguredBrowserBridge()` lo
+ * instancia desde variables de entorno y las tools de búsqueda/comparación lo
+ * usan como fallback automático (ver `browserBridge.ts`). También sirve suelto
+ * en un script Node para obtener el JSON/HTML y pasárselo a las tools a mano.
  *
  * OJO: `launchPersistentContext` toma el perfil real; Chrome debe estar
  * cerrado (o usa un `userDataDir` copiado) para evitar el lock del perfil.
@@ -48,6 +51,10 @@ interface PlaywrightPage {
   goto: (url: string, opts?: Record<string, unknown>) => Promise<unknown>;
   evaluate: <T>(fn: string) => Promise<T>;
   content: () => Promise<string>;
+  waitForSelector: (
+    selector: string,
+    opts?: Record<string, unknown>
+  ) => Promise<unknown>;
 }
 
 async function loadPlaywright(): Promise<PlaywrightLike> {
@@ -110,6 +117,34 @@ export class PlaywrightBridge implements BrowserBridge {
     const page = await ctx.newPage();
     const url = path.startsWith("http") ? path : this.baseUrl() + path;
     await page.goto(url, { waitUntil: "domcontentloaded" });
+    return page.content();
+  }
+
+  /**
+   * HTML de una página SSR de Next.js (Líder/Tottus) ya renderizada. A
+   * diferencia de `fetchAuthedHtml`, espera a que el DOM tenga el
+   * `<script id="__NEXT_DATA__">` antes de serializar: esas cadenas cargan tras
+   * el desafío antibot (PerimeterX ejecuta JS) y con App Router el HTML inicial
+   * llega por streaming (`self.__next_f`), así que leer demasiado pronto da un
+   * documento sin `__NEXT_DATA__` que el parser confundiría con "0 resultados"
+   * (ver issue #2). Con `networkidle` + espera del selector, `page.content()`
+   * ya trae el `<script id="__NEXT_DATA__">` que esperan los extractores.
+   */
+  async fetchSsrHtml(url: string, timeoutMs = 15_000): Promise<string> {
+    const ctx = await this.ensureContext();
+    const page = await ctx.newPage();
+    const full = url.startsWith("http") ? url : this.baseUrl() + url;
+    await page.goto(full, { waitUntil: "networkidle", timeout: timeoutMs });
+    // Si el selector no aparece (bloqueo persistente), devolvemos lo que haya:
+    // el adaptador ya distingue el HTML de bloqueo (isLiderBlockedHtml) y lanza
+    // un error accionable, mejor que colgarse esperando el selector.
+    try {
+      await page.waitForSelector('script[id="__NEXT_DATA__"]', {
+        timeout: timeoutMs,
+      });
+    } catch {
+      // sin __NEXT_DATA__: cae al manejo de bloqueo del adaptador.
+    }
     return page.content();
   }
 

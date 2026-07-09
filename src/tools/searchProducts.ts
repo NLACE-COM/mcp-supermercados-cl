@@ -5,6 +5,10 @@ import { toActionableError, toolError } from "../core/errors.js";
 import { priceScopeInfo } from "../core/format.js";
 import { wrapLiderHtml } from "../adapters/lider.js";
 import { wrapTottusHtml } from "../adapters/tottus.js";
+import {
+  bridgeSession,
+  getConfiguredBrowserBridge,
+} from "../adapters/browserBridge.js";
 
 /**
  * Cadenas SSR protegidas por antibot que aceptan un puente de navegador: la
@@ -124,15 +128,22 @@ export function registerSearchProducts(server: McpServer): void {
       browserHtml,
     }) => {
       // Cadenas SSR con antibot (Líder/Tottus): el fetch del servidor cae en el
-      // bloqueo (fingerprint del cliente). Si el usuario trae el HTML desde un
-      // navegador real que ya pasó el desafío, lo usamos vía el puente de sesión.
+      // bloqueo (fingerprint del cliente). Dos vías para sortearlo:
+      //  1. `browserHtml`: el usuario pega el HTML de su navegador (flujo manual).
+      //  2. Puente Playwright configurado por entorno: navega solo, reusando el
+      //     perfil de Chrome del usuario (flujo automático). Si no está
+      //     configurado o falla, se cae al snippet manual del catch.
       const bridge = BROWSER_BRIDGE[store];
+      const autoBridge =
+        bridge && !browserHtml ? getConfiguredBrowserBridge() : undefined;
       try {
         const adapter = getAdapter(store);
         const session =
           bridge && browserHtml
             ? { store, fetchAuthedHtml: async () => bridge.wrap(browserHtml) }
-            : undefined;
+            : autoBridge
+              ? bridgeSession(store, autoBridge, branchId)
+              : undefined;
         // Pedimos un poco más para que el filtro/orden tenga de dónde elegir.
         const raw = await adapter.searchProducts(query, {
           limit: maxPrice || minPrice || inStockOnly ? Math.min(50, limit * 3) : limit,
@@ -194,7 +205,11 @@ export function registerSearchProducts(server: McpServer): void {
                       note:
                         `${store} bloquea el fetch del servidor (antibot): no es tu IP, es el ` +
                         "fingerprint del cliente. Abre la búsqueda en un navegador real (que ya " +
-                        "pasó el desafío) y reintenta pasando browserHtml.",
+                        "pasó el desafío) y reintenta pasando browserHtml." +
+                        (autoBridge
+                          ? " (El puente Playwright está configurado pero no pudo resolverlo: " +
+                            "revisa que Chrome esté cerrado y la sesión activa, o usa el flujo manual.)"
+                          : " Para automatizarlo, configura SUPERMERCADOS_PLAYWRIGHT_PROFILE."),
                       openUrl: bridge.searchUrl(query, page),
                       browserSnippet:
                         "document.getElementById('__NEXT_DATA__')?.textContent || document.documentElement.outerHTML",
