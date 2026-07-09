@@ -4,6 +4,7 @@ import { registerAdapterStatus } from "./tools/adapterStatus.js";
 import { registerBuildList } from "./tools/buildList.js";
 import { registerCartTools } from "./tools/cart.js";
 import { registerCompareStores } from "./tools/compareStores.js";
+import { registerCheapestBasket } from "./tools/cheapestBasket.js";
 import { registerFindOpportunities } from "./tools/findOpportunities.js";
 import { registerGetFrequentPurchases } from "./tools/getFrequentPurchases.js";
 import { registerGetSavedLists } from "./tools/getSavedLists.js";
@@ -73,6 +74,8 @@ export function createServer(): McpServer {
   registerFindOpportunities(server);
   // Comparación entre cadenas (secundaria)
   registerCompareStores(server);
+  // Canasta más barata repartida (cherry-pick por ítem entre cadenas)
+  registerCheapestBasket(server);
   // Diagnóstico
   registerAdapterStatus(server);
   // Descubrimiento de sucursal (quita fricción: no pedir branchId a mano)

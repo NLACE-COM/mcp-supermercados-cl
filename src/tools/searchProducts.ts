@@ -1,8 +1,37 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { availableStores, getAdapter } from "../core/registry.js";
-import { toolError } from "../core/errors.js";
+import { toActionableError, toolError } from "../core/errors.js";
 import { priceScopeInfo } from "../core/format.js";
+import { wrapLiderHtml } from "../adapters/lider.js";
+import { wrapTottusHtml } from "../adapters/tottus.js";
+
+/**
+ * Cadenas SSR protegidas por antibot que aceptan un puente de navegador: la
+ * tool recibe el HTML (o el JSON de __NEXT_DATA__) que el usuario obtuvo en su
+ * navegador real y lo parsea, en vez de hacer el fetch que el sitio bloquea
+ * por fingerprint del cliente.
+ */
+const BROWSER_BRIDGE: Partial<
+  Record<
+    string,
+    {
+      wrap: (html: string) => string;
+      searchUrl: (query: string, page: number) => string;
+    }
+  >
+> = {
+  lider: {
+    wrap: wrapLiderHtml,
+    searchUrl: (query, page) =>
+      `https://super.lider.cl/search?query=${encodeURIComponent(query)}${page > 1 ? `&page=${page}` : ""}`,
+  },
+  tottus: {
+    wrap: wrapTottusHtml,
+    searchUrl: (query, page) =>
+      `https://www.tottus.cl/tottus-cl/buscar?Ntt=${encodeURIComponent(query)}${page > 1 ? `&page=${page}&store=to_com` : ""}`,
+  },
+};
 
 /**
  * Tool de lectura de catálogo. Con sesión (fase 2) devolverá el precio
@@ -70,6 +99,16 @@ export function registerSearchProducts(server: McpServer): void {
           .boolean()
           .default(false)
           .describe("true = solo productos con stock real."),
+        browserHtml: z
+          .string()
+          .optional()
+          .describe(
+            "Líder y Tottus: HTML de la página de búsqueda (o el JSON de __NEXT_DATA__) " +
+              "obtenido en un navegador real que ya pasó el antibot. Si se entrega, se " +
+              "parsea eso en vez de hacer el fetch (que la cadena bloquea por fingerprint " +
+              "del cliente). Flujo: llamar sin browserHtml → se devuelve openUrl+browserSnippet " +
+              "→ ejecutarlo en el navegador → reintentar con browserHtml."
+          ),
       },
     },
     async ({
@@ -82,14 +121,24 @@ export function registerSearchProducts(server: McpServer): void {
       minPrice,
       sortBy,
       inStockOnly,
+      browserHtml,
     }) => {
+      // Cadenas SSR con antibot (Líder/Tottus): el fetch del servidor cae en el
+      // bloqueo (fingerprint del cliente). Si el usuario trae el HTML desde un
+      // navegador real que ya pasó el desafío, lo usamos vía el puente de sesión.
+      const bridge = BROWSER_BRIDGE[store];
       try {
         const adapter = getAdapter(store);
+        const session =
+          bridge && browserHtml
+            ? { store, fetchAuthedHtml: async () => bridge.wrap(browserHtml) }
+            : undefined;
         // Pedimos un poco más para que el filtro/orden tenga de dónde elegir.
         const raw = await adapter.searchProducts(query, {
           limit: maxPrice || minPrice || inStockOnly ? Math.min(50, limit * 3) : limit,
           page,
           branchId,
+          ...(session ? { session } : {}),
         });
 
         let products = raw;
@@ -126,6 +175,39 @@ export function registerSearchProducts(server: McpServer): void {
           ],
         };
       } catch (err) {
+        // Cadenas con puente de navegador (Líder/Tottus): si cayó en el antibot y
+        // no nos pasaron el HTML del navegador, guiamos el puente en vez de solo
+        // reportar el error. Ojo: el 403 de Tottus se clasifica como
+        // "session_expired"; para búsqueda pública equivale a bloqueo.
+        if (bridge && !browserHtml) {
+          const kind = toActionableError(err, store).kind;
+          if (kind === "blocked" || kind === "session_expired") {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(
+                    {
+                      store,
+                      query,
+                      blocked: true,
+                      note:
+                        `${store} bloquea el fetch del servidor (antibot): no es tu IP, es el ` +
+                        "fingerprint del cliente. Abre la búsqueda en un navegador real (que ya " +
+                        "pasó el desafío) y reintenta pasando browserHtml.",
+                      openUrl: bridge.searchUrl(query, page),
+                      browserSnippet:
+                        "document.getElementById('__NEXT_DATA__')?.textContent || document.documentElement.outerHTML",
+                      retryWith: `Reintenta search_products con store='${store}', la misma query y browserHtml = lo que devolvió el snippet.`,
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+          }
+        }
         return toolError(
           err,
           `Error buscando "${query}" en ${store}. Cadenas disponibles: ${availableStores().join(", ")}`,
