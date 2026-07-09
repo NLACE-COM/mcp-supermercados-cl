@@ -4,6 +4,59 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-07-09
+
+Versión de **compra multi-cadena** y **automatización del puente de navegador**.
+Integra contribuciones de la comunidad ([#3](https://github.com/NLACE-COM/mcp-supermercados-cl/pull/3)
+de @dmnavalon) y cierra el [#2](https://github.com/NLACE-COM/mcp-supermercados-cl/issues/2).
+
+### Added
+
+- **`build_cheapest_basket`**: arma la canasta más barata "repartida". A
+  diferencia de `compare_stores` (que elige UNA cadena para toda la lista),
+  asigna CADA ítem a la cadena donde sale más barato (por precio por unidad) y
+  agrupa la compra por cadena. Devuelve `picks`, `plan`, `basketTotal`,
+  `singleStore`, `splitSaving` (ahorro de repartir vs comprar todo en una),
+  `mixedFormatItems` y `missing`. Prompt guiado `super_eficiente`.
+- **Puente de navegador manual para Líder y Tottus**: `search_products` acepta
+  `browserHtml` (HTML o JSON de `__NEXT_DATA__` traído de un navegador real que
+  ya pasó el antibot). Sin él y estando bloqueado, la tool devuelve una
+  respuesta accionable (`openUrl` + `browserSnippet` + `retryWith`) en vez de un
+  error seco.
+- **Puente de navegador automático** (`src/adapters/browserBridge.ts`): con
+  Playwright configurado por entorno (`SUPERMERCADOS_PLAYWRIGHT_PROFILE`, y
+  opcionales `SUPERMERCADOS_PLAYWRIGHT_CHANNEL` / `_HEADLESS`), el servidor
+  navega solo reusando el perfil de Chrome del usuario y resuelve Líder/Tottus
+  sin intervención. Aplica a `search_products`, `compare_stores` y
+  `build_cheapest_basket`. Sin configurar, se mantiene el flujo manual. El
+  servidor sigue sin ver credenciales.
+
+### Changed
+
+- `PlaywrightBridge.fetchSsrHtml()` espera `#__NEXT_DATA__` en el DOM
+  (`networkidle` + selector) antes de leer, porque el App Router de estas
+  cadenas sirve el HTML por streaming (`self.__next_f`).
+- Documentación corregida: el bloqueo de Líder es por **fingerprint del cliente**
+  (TLS/JA3 + PerimeterX + F5 BIG-IP, `307 → /blocked`), no por reputación de IP;
+  la nota anterior ("responde desde IP residencial") quedó obsoleta.
+- 13 tools, 153 tests. README y `CLAUDE.md` actualizados.
+
+## [1.3.0] - 2026-07-07
+
+### Added
+
+- **Alcance de precios por sucursal** (`priceScope` / `priceScopeNote`): las
+  respuestas de `search_products`, `build_list` y `compare_stores` advierten
+  cuándo los precios son de catálogo nacional (sin `branchId`) y pueden diferir
+  de la sucursal del usuario.
+
+### Fixed
+
+- **Bloqueo de Líder detectado**: PerimeterX a veces responde `307 → /blocked`
+  ("Robot or human", sin `__NEXT_DATA__`) en vez de `403`, lo que se confundía
+  con "0 resultados". `isLiderBlockedHtml` lo detecta y lanza un error `blocked`
+  accionable. 136 tests.
+
 ## [1.2.0] - 2026-07-07
 
 Versión enfocada en **experiencia del usuario**.
@@ -108,6 +161,8 @@ Versión enfocada en **experiencia del usuario**.
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.4.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.0
+[1.3.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.3.0
 [1.2.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.2.0
 [1.1.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.1.0
 [1.0.3]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.0.3
