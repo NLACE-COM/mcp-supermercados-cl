@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/nlace-com-mcp-supermercados-cl-badge.png)](https://mseep.ai/app/nlace-com-mcp-supermercados-cl)
+
 # 🛒 mcp-supermercados-cl
 
 > Servidor **MCP** para buscar productos, comparar precios y armar la mejor lista
