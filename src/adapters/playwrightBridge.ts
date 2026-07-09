@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import type { BrowserBridge } from "./session.js";
 
 /**
@@ -58,20 +59,39 @@ interface PlaywrightPage {
 }
 
 async function loadPlaywright(): Promise<PlaywrightLike> {
+  // 1) Resolución normal: funciona si Playwright es dependencia local del
+  //    paquete (repo clonado con `npm install playwright`). Especificador en
+  //    variable para que TypeScript no intente resolver el módulo opcional.
   try {
-    // Especificador en variable: playwright es opcional y no está en las
-    // deps, así que TypeScript no debe intentar resolver el módulo aquí. El
-    // import dinámico solo funciona si el usuario lo instaló.
     const moduleName = "playwright";
     return (await import(moduleName)) as unknown as PlaywrightLike;
   } catch {
-    throw new Error(
-      "Playwright no está instalado. Para el puente automatizado ejecuta: " +
-        "`npm install playwright` (y `npx playwright install chromium`). " +
-        "Sin él, usa el flujo manual: ejecuta el browserSnippet de la tool en " +
-        "el navegador y pasa el JSON de vuelta."
-    );
+    // sigue al fallback por ruta explícita.
   }
+
+  // 2) Ruta explícita por entorno: imprescindible cuando el server corre por
+  //    `npx` (su node_modules efímero no tiene Playwright) y este está
+  //    instalado GLOBAL. NODE_PATH no sirve para import ESM; createRequire
+  //    resuelve el entry del paquete desde su directorio.
+  //    Valor: la carpeta del paquete, ej. la salida de `npm root -g` + "/playwright".
+  const explicit = process.env.SUPERMERCADOS_PLAYWRIGHT_PATH?.trim();
+  if (explicit) {
+    try {
+      const require = createRequire(import.meta.url);
+      return require(explicit) as PlaywrightLike;
+    } catch {
+      // cae al error guía de abajo.
+    }
+  }
+
+  throw new Error(
+    "Playwright no está disponible. Para el puente automatizado instálalo " +
+      "(`npm install playwright` en el repo, o `npm install -g playwright` si " +
+      "corres por npx) y, si es global, apunta SUPERMERCADOS_PLAYWRIGHT_PATH a " +
+      'su carpeta (la salida de `npm root -g` + "/playwright"). Sin él, usa el ' +
+      "flujo manual: ejecuta el browserSnippet de la tool en el navegador y pasa " +
+      "el JSON de vuelta."
+  );
 }
 
 export class PlaywrightBridge implements BrowserBridge {

@@ -4,6 +4,27 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.2] - 2026-07-09
+
+Hace usable el puente automático cuando el server corre por **`npx`** (Claude
+Desktop, etc.): antes solo cargaba Playwright si era dependencia local.
+
+### Fixed
+
+- **Carga de Playwright global con `npx`** (`loadPlaywright`): por `npx` el
+  `node_modules` del paquete es efímero y no ve el Playwright global. `NODE_PATH`
+  no ayuda —el bridge carga con `import()` (ESM) y `NODE_PATH` solo aplica a
+  `require()` (CommonJS), verificado—. Ahora, si el `import("playwright")` normal
+  falla, se resuelve el paquete global vía `createRequire` desde la carpeta que
+  indique la nueva variable `SUPERMERCADOS_PLAYWRIGHT_PATH` (salida de
+  `npm root -g` + `/playwright`). Verificado end-to-end: npx + esa variable →
+  Líder 46 productos.
+
+### Added
+
+- Variable `SUPERMERCADOS_PLAYWRIGHT_PATH` y guía de configuración para `npx` en
+  el README.
+
 ## [1.4.1] - 2026-07-09
 
 Corrige el puente de navegador automático de la 1.4.0, que **nunca resolvía**
@@ -185,6 +206,7 @@ Versión enfocada en **experiencia del usuario**.
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.4.2]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.2
 [1.4.1]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.1
 [1.4.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.0
 [1.3.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.3.0

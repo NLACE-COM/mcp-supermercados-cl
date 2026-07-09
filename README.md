@@ -250,14 +250,37 @@ Hay dos formas de sortearlo en `search_products`, `compare_stores` y
    navega solo reusando tu perfil de Chrome (nunca ve tu token) y resuelve esas
    cadenas sin intervención. Variables (en la sección `env` de tu cliente MCP):
 
-   | Variable                            | Requerida | Descripción                                                                              |
-   | ----------------------------------- | --------- | ---------------------------------------------------------------------------------------- |
-   | `SUPERMERCADOS_PLAYWRIGHT_PROFILE`  | sí        | Carpeta del perfil de Chrome con tu sesión (`userDataDir`). Activa el puente.            |
-   | `SUPERMERCADOS_PLAYWRIGHT_CHANNEL`  | no        | `chrome` o `msedge` para usar el navegador instalado (si no, el Chromium de Playwright). |
-   | `SUPERMERCADOS_PLAYWRIGHT_HEADLESS` | no        | `1` para headless (por defecto con ventana, evita gatillar antibots/2FA).                |
+   | Variable                            | Requerida | Descripción                                                                                                                                                  |
+   | ----------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+   | `SUPERMERCADOS_PLAYWRIGHT_PROFILE`  | sí        | Carpeta del perfil de Chrome con tu sesión (`userDataDir`). Activa el puente.                                                                                |
+   | `SUPERMERCADOS_PLAYWRIGHT_PATH`     | con `npx` | Carpeta del paquete `playwright` cuando está instalado **global** (por `npx` el server no lo resuelve solo). Valor: salida de `npm root -g` + `/playwright`. |
+   | `SUPERMERCADOS_PLAYWRIGHT_CHANNEL`  | no        | `chrome` o `msedge` para usar el navegador instalado (si no, el Chromium de Playwright).                                                                     |
+   | `SUPERMERCADOS_PLAYWRIGHT_HEADLESS` | no        | `1` para headless (por defecto con ventana, evita gatillar antibots/2FA).                                                                                    |
 
    Requiere Playwright instalado y **Chrome cerrado** (para no chocar con el lock
    del perfil). Sin estas variables, el comportamiento es el manual de arriba.
+
+   **Con `npx` (Claude Desktop, etc.):** el paquete corre en un cache efímero sin
+   Playwright, así que instálalo global (`npm install -g playwright`) y apunta
+   `SUPERMERCADOS_PLAYWRIGHT_PATH` a su carpeta. `NODE_PATH` **no** sirve: el
+   server carga Playwright con `import()` (ESM) y `NODE_PATH` solo aplica a
+   `require()` de CommonJS.
+
+   ```json
+   {
+     "mcpServers": {
+       "supermercados-cl": {
+         "command": "npx",
+         "args": ["-y", "mcp-supermercados-cl@latest"],
+         "env": {
+           "SUPERMERCADOS_PLAYWRIGHT_PROFILE": "/Users/tu-usuario/Library/Application Support/Google/Chrome",
+           "SUPERMERCADOS_PLAYWRIGHT_PATH": "/ruta/de/npm-root-g/playwright",
+           "SUPERMERCADOS_PLAYWRIGHT_CHANNEL": "chrome"
+         }
+       }
+     }
+   }
+   ```
 
 ---
 
