@@ -4,6 +4,23 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.3] - 2026-07-09
+
+Corrige una condición de carrera del puente que hacía fallar cadenas cuando se
+consultaban en paralelo (`compare_stores`, `build_cheapest_basket`): en la
+práctica Tottus resolvía y Líder caía con "bloqueado".
+
+### Fixed
+
+- **Carrera al abrir el navegador** (`PlaywrightBridge.ensureContext`): las
+  cadenas se navegan en paralelo, y dos `launchPersistentContext` concurrentes
+  sobre el mismo `userDataDir` chocaban por el lock del perfil
+  (`Target page, context or browser has been closed`) → una cadena resolvía y la
+  otra fallaba de forma intermitente. Ahora se memoiza la **promesa** del
+  contexto, de modo que todas las llamadas concurrentes comparten un solo
+  navegador; si el lanzamiento falla, no queda cacheada la promesa rechazada.
+  Verificado contra los sitios reales: Líder y Tottus resuelven juntos.
+
 ## [1.4.2] - 2026-07-09
 
 Hace usable el puente automático cuando el server corre por **`npx`** (Claude
@@ -206,6 +223,7 @@ Versión enfocada en **experiencia del usuario**.
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.4.3]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.3
 [1.4.2]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.2
 [1.4.1]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.1
 [1.4.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.0

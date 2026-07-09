@@ -96,7 +96,12 @@ async function loadPlaywright(): Promise<PlaywrightLike> {
 
 export class PlaywrightBridge implements BrowserBridge {
   private readonly opts: PlaywrightBridgeOptions;
-  private context?: PlaywrightContext;
+  // Se memoiza la PROMESA (no el context ya resuelto): `compare_stores` y
+  // `build_cheapest_basket` navegan las cadenas en paralelo, y dos
+  // `launchPersistentContext` concurrentes sobre el mismo `userDataDir` chocan
+  // por el lock del perfil ("Target page, context or browser has been closed").
+  // Compartiendo una sola promesa, todas las llamadas reusan el mismo navegador.
+  private contextPromise?: Promise<PlaywrightContext>;
 
   constructor(opts: PlaywrightBridgeOptions) {
     this.opts = opts;
@@ -106,14 +111,22 @@ export class PlaywrightBridge implements BrowserBridge {
     return this.opts.baseUrl ?? "https://www.jumbo.cl";
   }
 
-  private async ensureContext(): Promise<PlaywrightContext> {
-    if (this.context) return this.context;
-    const pw = await loadPlaywright();
-    this.context = await pw.chromium.launchPersistentContext(this.opts.userDataDir, {
-      headless: this.opts.headless ?? false,
-      ...(this.opts.channel ? { channel: this.opts.channel } : {}),
-    });
-    return this.context;
+  private ensureContext(): Promise<PlaywrightContext> {
+    if (!this.contextPromise) {
+      this.contextPromise = (async () => {
+        const pw = await loadPlaywright();
+        return pw.chromium.launchPersistentContext(this.opts.userDataDir, {
+          headless: this.opts.headless ?? false,
+          ...(this.opts.channel ? { channel: this.opts.channel } : {}),
+        });
+      })();
+      // Si el lanzamiento falla, no dejar cacheada una promesa rechazada: el
+      // próximo intento debe poder relanzar el navegador.
+      this.contextPromise.catch(() => {
+        this.contextPromise = undefined;
+      });
+    }
+    return this.contextPromise;
   }
 
   /**
@@ -176,7 +189,8 @@ export class PlaywrightBridge implements BrowserBridge {
   }
 
   async close(): Promise<void> {
-    await this.context?.close();
-    this.context = undefined;
+    const p = this.contextPromise;
+    this.contextPromise = undefined;
+    if (p) await (await p).close().catch(() => {});
   }
 }
