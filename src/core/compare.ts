@@ -2,6 +2,12 @@ import { getAdapter } from "./registry.js";
 import { rankCandidates } from "./listBuilder.js";
 import { matchScore } from "./matching.js";
 import type { Product, StoreId } from "./types.js";
+import {
+  bridgeSession,
+  getConfiguredBrowserBridge,
+  storeSupportsBrowserBridge,
+  type SsrBrowserBridge,
+} from "../adapters/browserBridge.js";
 
 /**
  * Comparación entre cadenas (fase 7, capacidad secundaria del plan). Para
@@ -107,10 +113,18 @@ export type CompareProgressFn = (
 async function compareOneStore(
   store: StoreId,
   items: string[],
-  branchId?: string
+  branchId?: string,
+  bridge?: SsrBrowserBridge
 ): Promise<StoreComparison> {
   const adapter = getAdapter(store);
   const results: StoreItemResult[] = [];
+  // Cadenas SSR con antibot (Líder/Tottus): sin puente el fetch plano se bloquea
+  // y la cadena queda en error. Con un puente configurado, se resuelve la
+  // búsqueda por el navegador del usuario (mismo patrón que search_products).
+  const session =
+    bridge && storeSupportsBrowserBridge(store)
+      ? bridgeSession(store, bridge, branchId)
+      : undefined;
   const summary = (error?: string): StoreComparison => ({
     store,
     items: [...results],
@@ -129,6 +143,7 @@ async function compareOneStore(
         const candidates = await adapter.searchProducts(query, {
           limit: 8,
           branchId,
+          ...(session ? { session } : {}),
         });
         // Descarta candidatos que no matchean la query (ruido del buscador):
         // así no comparamos un producto que ni siquiera es lo pedido. Si el
@@ -166,13 +181,15 @@ export async function compareStores(
   items: string[],
   stores: StoreId[],
   branchId?: string,
-  onProgress?: CompareProgressFn
+  onProgress?: CompareProgressFn,
+  bridge: SsrBrowserBridge | undefined = getConfiguredBrowserBridge()
 ): Promise<CompareResult> {
   // En paralelo por cadena; cada una serializa internamente por rate limit.
+  // El puente (Playwright configurado) resuelve Líder/Tottus si está presente.
   let done = 0;
   const comparisons = await Promise.all(
     stores.map((s) =>
-      compareOneStore(s, items, branchId).then(async (c) => {
+      compareOneStore(s, items, branchId, bridge).then(async (c) => {
         done += 1;
         await onProgress?.(
           done,
