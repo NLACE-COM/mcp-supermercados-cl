@@ -127,19 +127,26 @@ export class PlaywrightBridge implements BrowserBridge {
    * el desafío antibot (PerimeterX ejecuta JS) y con App Router el HTML inicial
    * llega por streaming (`self.__next_f`), así que leer demasiado pronto da un
    * documento sin `__NEXT_DATA__` que el parser confundiría con "0 resultados"
-   * (ver issue #2). Con `networkidle` + espera del selector, `page.content()`
-   * ya trae el `<script id="__NEXT_DATA__">` que esperan los extractores.
+   * (ver issue #2). Con la espera del selector, `page.content()` ya trae el
+   * `<script id="__NEXT_DATA__">` que esperan los extractores.
+   *
+   * OJO (dos trampas verificadas contra el sitio real):
+   *  - `waitUntil: "networkidle"` NO sirve: estos sitios tienen analytics/polling
+   *    permanente y nunca quedan idle → timeout. Se usa `domcontentloaded`.
+   *  - `waitForSelector` por defecto espera `state: "visible"`, pero un `<script>`
+   *    es invisible → timeout eterno. Hay que pedir `state: "attached"`.
    */
-  async fetchSsrHtml(url: string, timeoutMs = 15_000): Promise<string> {
+  async fetchSsrHtml(url: string, timeoutMs = 20_000): Promise<string> {
     const ctx = await this.ensureContext();
     const page = await ctx.newPage();
     const full = url.startsWith("http") ? url : this.baseUrl() + url;
-    await page.goto(full, { waitUntil: "networkidle", timeout: timeoutMs });
+    await page.goto(full, { waitUntil: "domcontentloaded", timeout: timeoutMs });
     // Si el selector no aparece (bloqueo persistente), devolvemos lo que haya:
     // el adaptador ya distingue el HTML de bloqueo (isLiderBlockedHtml) y lanza
     // un error accionable, mejor que colgarse esperando el selector.
     try {
       await page.waitForSelector('script[id="__NEXT_DATA__"]', {
+        state: "attached",
         timeout: timeoutMs,
       });
     } catch {

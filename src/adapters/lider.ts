@@ -15,6 +15,7 @@ import type {
 } from "../core/types.js";
 import { defaultHttpClient, type HttpFetcher } from "../http/client.js";
 import { NotImplementedError, type StoreAdapter } from "./base.js";
+import { extractNextDataJson, hasNextData } from "./nextData.js";
 
 /**
  * Adaptador Lider (Walmart Chile, plataforma Glass). La búsqueda vive en el SSR:
@@ -49,7 +50,7 @@ const NEXT_DATA_MARKER = '<script id="__NEXT_DATA__" type="application/json">';
  * confundía con "0 resultados", que suena a "no venden el producto".
  */
 export function isLiderBlockedHtml(html: string): boolean {
-  return html.includes("Robot or human") || !html.includes(NEXT_DATA_MARKER);
+  return html.includes("Robot or human") || !hasNextData(html);
 }
 
 /**
@@ -62,7 +63,7 @@ export function isLiderBlockedHtml(html: string): boolean {
  */
 export function wrapLiderHtml(browserContent: string): string {
   const s = browserContent.trim();
-  if (s.includes('id="__NEXT_DATA__"')) return s;
+  if (hasNextData(s)) return s;
   return `${NEXT_DATA_MARKER}${s}</script>`;
 }
 
@@ -201,14 +202,11 @@ function imageUrl(p: LiderProduct): string | undefined {
  * El árbol de Glass es profundo; se recorre buscando el arreglo de productos.
  */
 export function extractLiderProducts(html: string): LiderProduct[] {
-  const start = html.indexOf(NEXT_DATA_MARKER);
-  if (start === -1) return [];
-  const from = start + NEXT_DATA_MARKER.length;
-  const end = html.indexOf("</script>", from);
-  if (end === -1) return [];
+  const json = extractNextDataJson(html);
+  if (json === null) return [];
   let data: unknown;
   try {
-    data = JSON.parse(html.slice(from, end));
+    data = JSON.parse(json);
   } catch {
     return [];
   }
