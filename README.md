@@ -7,7 +7,7 @@
 
 [![npm](https://img.shields.io/npm/v/mcp-supermercados-cl?logo=npm)](https://www.npmjs.com/package/mcp-supermercados-cl)
 ![node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
-![tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-157%20passing-brightgreen)
 ![license](https://img.shields.io/badge/licencia-MIT-blue)
 
 El foco es **profundidad en la cadena donde tú ya compras** — precios club,

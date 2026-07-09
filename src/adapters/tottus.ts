@@ -11,6 +11,7 @@ import type {
 } from "../core/types.js";
 import { defaultHttpClient, type HttpFetcher } from "../http/client.js";
 import { NotImplementedError, type StoreAdapter } from "./base.js";
+import { extractNextDataJson, hasNextData } from "./nextData.js";
 
 /**
  * Adaptador Tottus (Falabella, Next.js SSR). Verificado 2026-07-07 desde IP
@@ -161,13 +162,10 @@ export class TottusAdapter implements StoreAdapter {
 
 /** Extrae props.pageProps.results del __NEXT_DATA__ del HTML SSR. */
 export function extractTottusResults(html: string): TottusProduct[] {
-  const start = html.indexOf(NEXT_DATA_MARKER);
-  if (start === -1) return [];
-  const from = start + NEXT_DATA_MARKER.length;
-  const end = html.indexOf("</script>", from);
-  if (end === -1) return [];
+  const json = extractNextDataJson(html);
+  if (json === null) return [];
   try {
-    const data = JSON.parse(html.slice(from, end));
+    const data = JSON.parse(json);
     const results = data?.props?.pageProps?.results;
     return Array.isArray(results) ? results : [];
   } catch {
@@ -185,6 +183,6 @@ export function extractTottusResults(html: string): TottusProduct[] {
  */
 export function wrapTottusHtml(browserContent: string): string {
   const s = browserContent.trim();
-  if (s.includes('id="__NEXT_DATA__"')) return s;
+  if (hasNextData(s)) return s;
   return `${NEXT_DATA_MARKER}${s}</script>`;
 }

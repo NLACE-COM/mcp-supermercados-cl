@@ -4,6 +4,30 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.1] - 2026-07-09
+
+Corrige el puente de navegador automático de la 1.4.0, que **nunca resolvía**
+Líder/Tottus por tres bugs detectados al validarlo contra los sitios reales con
+Playwright (los tests con fixtures no los veían). Ya verificado: Líder devuelve
+~46 productos y Tottus ~48.
+
+### Fixed
+
+- **Extracción de `__NEXT_DATA__` robusta al `nonce` de CSP** (`src/adapters/nextData.ts`):
+  el HTML traído por el navegador real inyecta `<script nonce="" id="__NEXT_DATA__" …>`
+  —con el `nonce` antes del `id`—, que el marcador literal no matcheaba, así que
+  Líder se reportaba como "bloqueado" pese a traer los datos. Líder y Tottus
+  comparten ahora `extractNextDataJson`/`hasNextData` (tolerantes a orden de
+  atributos). El fetch HTTP plano de las fixtures no lleva `nonce`, por eso el
+  bug no salía en los tests.
+- **`PlaywrightBridge.fetchSsrHtml` — navegación**: `waitUntil: "networkidle"`
+  nunca se cumplía (estos sitios tienen analytics/polling permanente y no quedan
+  idle) → timeout. Cambiado a `domcontentloaded`.
+- **`PlaywrightBridge.fetchSsrHtml` — espera del selector**: `waitForSelector`
+  esperaba `state: "visible"` por defecto, pero un `<script>` es invisible →
+  timeout eterno. Ahora pide `state: "attached"`.
+- 157 tests (incluye contrato del caso con `nonce`).
+
 ## [1.4.0] - 2026-07-09
 
 Versión de **compra multi-cadena** y **automatización del puente de navegador**.
@@ -161,6 +185,7 @@ Versión enfocada en **experiencia del usuario**.
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.4.1]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.1
 [1.4.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.0
 [1.3.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.3.0
 [1.2.0]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.2.0
