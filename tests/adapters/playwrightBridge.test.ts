@@ -10,7 +10,7 @@ describe("PlaywrightBridge sin Playwright instalado", () => {
   it("lanza un error guía al intentar evaluar", async () => {
     const bridge = new PlaywrightBridge({ userDataDir: "/tmp/perfil-inexistente" });
     await expect(bridge.evaluate("/", "1 + 1")).rejects.toThrow(
-      /Playwright no está instalado/
+      /Playwright no está disponible/
     );
   });
 
@@ -18,6 +18,6 @@ describe("PlaywrightBridge sin Playwright instalado", () => {
     const bridge = new PlaywrightBridge({ userDataDir: "/tmp/perfil-inexistente" });
     await expect(
       bridge.fetchSsrHtml("https://super.lider.cl/search?query=arroz")
-    ).rejects.toThrow(/Playwright no está instalado/);
+    ).rejects.toThrow(/Playwright no está disponible/);
   });
 });
