@@ -4,6 +4,31 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.4] - 2026-07-13
+
+Elimina el ruido del smoke live semanal: Tottus y Líder bloquean siempre el
+tráfico de datacenter (GitHub Actions), así que el workflow abría un issue de
+falso positivo cada lunes (ej. #9) que enterraba las alertas reales.
+
+### Fixed
+
+- **Smoke live tolera el bloqueo antibot esperable** (`tests/live/otras-cadenas.live.test.ts`):
+  el smoke distingue un bloqueo antibot (`HttpStatusError` 401/403/307/429, o un
+  `Error` con mensaje de antibot: PerimeterX/BIG-IP/"blocked") de un cambio de
+  formato real (el fetch devuelve 200 pero `ProductSchema.parse` o la aserción de
+  resultados falla). El bloqueo desde la nube ya no rompe el smoke —se tolera con
+  un warning—, mientras que un cambio de formato sí lo rompe y abre el issue.
+  Jumbo, Santa Isabel y Unimarc (Constructor.io/BFF, sin bloqueo por IP) se
+  siguen validando de verdad. Se ajustó el mensaje del issue autogenerado y el
+  comentario del workflow para reflejar la nueva semántica.
+
+### Added
+
+- Variable `SMOKE_STRICT=1`: en un runner con IP residencial reendurece el
+  bloqueo a fallo, para recuperar cobertura real de las tres cadenas.
+  Verificado en vivo: modo normal 7/7 (Tottus/Líder tolerados con warning),
+  estricto 2 failed (Tottus/Líder).
+
 ## [1.4.3] - 2026-07-09
 
 Corrige una condición de carrera del puente que hacía fallar cadenas cuando se
