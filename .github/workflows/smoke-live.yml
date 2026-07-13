@@ -5,10 +5,13 @@ name: Smoke live (cadenas reales)
 # issue para avisar antes que los usuarios lo noten.
 #
 # OJO: Unimarc, Tottus y Lider bloquean el tráfico de datacenter, así que
-# desde los runners de GitHub (nube) es esperable que fallen. Este smoke es
-# útil sobre todo para Jumbo y Santa Isabel (Constructor.io, sin bloqueo).
-# Para una cobertura real de las cinco, córrelo en un runner self-hosted con
-# IP residencial.
+# desde los runners de GitHub (nube) ese bloqueo es esperable. El smoke lo
+# TOLERA (solo warning) para no generar falsos positivos cada semana; solo
+# alerta ante un fallo que NO sea bloqueo antibot (p. ej. cambio de formato:
+# el fetch pasa pero el esquema/aserción falla). Jumbo y Santa Isabel
+# (Constructor.io, sin bloqueo) sí se validan de verdad desde la nube.
+# Para cobertura real de las cinco, córrelo en un runner con IP residencial
+# y SMOKE_STRICT=1 (ahí el bloqueo vuelve a ser fallo).
 
 on:
   schedule:
@@ -44,8 +47,9 @@ jobs:
           script: |
             const title = "⚠️ Smoke live falló: una o más cadenas no responden como se espera";
             const body = [
-              "El smoke live programado falló. Puede ser un bloqueo antibot desde la nube",
-              "(esperable para Unimarc/Tottus/Lider) o un cambio real de formato en alguna cadena.",
+              "El smoke live programado falló. Los bloqueos antibot esperables desde la nube",
+              "(Unimarc/Tottus/Lider) ya se toleran, así que este fallo apunta a un cambio real",
+              "de formato en alguna cadena (o a que Jumbo/Santa Isabel dejaron de responder).",
               "",
               `Corrida: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               "",
