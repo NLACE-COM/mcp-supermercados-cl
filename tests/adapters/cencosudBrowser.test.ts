@@ -27,6 +27,7 @@ describe("snippets de navegador Cencosud", () => {
     expect(isParseableAsyncBody(code)).toBe(true);
     expect(code).toContain("/cart?store=jumboclj512");
     expect(code).toContain("sessionDataToken");
+    expect(code).toContain('credentials: "include"');
     // No debe empujar a raspar el DOM ni React.
     expect(code).not.toMatch(/querySelector|__REACT|reactProps/);
   });
@@ -38,6 +39,22 @@ describe("snippets de navegador Cencosud", () => {
     expect(code).toContain('"PATCH"');
     expect(code).toContain("92628");
     expect(code).toContain("Content-Type");
+    expect(code).toContain('credentials: "include"');
+  });
+
+  it("usa solo headers admitidos por el preflight CORS actual de Jumbo", () => {
+    const code = jumboMutateSnippet("/cart/items", "PATCH", { items: [] });
+
+    expect(code).toContain('"Authorization"');
+    expect(code).toContain('"apiKey"');
+    expect(code).not.toContain('"token"');
+    expect(code).not.toContain('"x-consumer"');
+    expect(code).not.toContain('"x-e-commerce"');
+    expect(code).not.toContain('"x-account"');
+    expect(code).toContain('"x-client-platform"');
+    expect(code).toContain('"x-client-version"');
+    expect(code).toContain('"x-trace-id"');
+    expect(code).toContain('be-reg-groceries-jumbo-cart-rhk68rqi0adn');
   });
 
   it("jumboFrequentCardsSnippet extrae cards del DOM en una pasada", () => {

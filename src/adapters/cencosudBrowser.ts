@@ -18,18 +18,19 @@
 export const JUMBO_BFF_BASE = "https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com";
 
 /**
- * Headers de sesión que el frontend de Jumbo envía al BFF. El token sale del
- * `localStorage` (`sessionDataToken`); el resto son constantes del banner.
- * `apiKey` es pública (va en el JS del sitio). Verificado 2026-07-07.
+ * Headers que hoy usa el frontend de Jumbo para el carro. El token sale del
+ * `localStorage` (`sessionDataToken`) y la `apiKey` es pública (va en el JS del
+ * sitio). No incluir `token`, `x-consumer`, `x-e-commerce` ni `x-account`:
+ * Jumbo los rechaza en el preflight. `x-client-platform`, `x-client-version` y
+ * `x-trace-id`, en cambio, están permitidos y forman parte del contrato actual
+ * del BFF de carro.
  */
 const JUMBO_SESSION_HEADERS_JS = `{
     "Authorization": "Bearer " + localStorage.getItem("sessionDataToken"),
-    "token": localStorage.getItem("sessionDataToken"),
-    "apiKey": "WnOIGTaOkfFwotM8Ddw2",
-    "x-consumer": "jumbocl",
-    "x-e-commerce": "jumbo",
-    "x-account": "jumbocl",
+    "apiKey": "be-reg-groceries-jumbo-cart-rhk68rqi0adn",
     "x-client-platform": "web",
+    "x-client-version": "3.3.98",
+    "x-trace-id": crypto.randomUUID(),
     "Accept": "application/json"
   }`;
 
@@ -42,6 +43,7 @@ export function jumboFetchSnippet(path: string): string {
   return (
     `// Ejecutar en una pestaña YA LOGUEADA de https://www.jumbo.cl (mismo origen).\n` +
     `await fetch(${JSON.stringify(JUMBO_BFF_BASE + path)}, {\n` +
+    `  credentials: "include",\n` +
     `  headers: ${JUMBO_SESSION_HEADERS_JS}\n` +
     `}).then(r => r.json())`
   );
@@ -59,6 +61,7 @@ export function jumboMutateSnippet(
   return (
     `// Ejecutar en una pestaña YA LOGUEADA de https://www.jumbo.cl (mismo origen).\n` +
     `await fetch(${JSON.stringify(JUMBO_BFF_BASE + path)}, {\n` +
+    `  credentials: "include",\n` +
     `  method: ${JSON.stringify(method)},\n` +
     `  body: JSON.stringify(${JSON.stringify(body)}),\n` +
     `  headers: {\n` +

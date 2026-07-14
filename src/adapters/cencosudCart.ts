@@ -122,9 +122,11 @@ export function parseCart(raw: unknown, store: StoreId): Cart {
 }
 
 /**
- * Arma el body del PATCH /cart/items tal como lo envía el frontend
- * (verificado 2026-07-07). Los campos más allá de skuId/quantity son
- * banderas que el sitio manda con estos defaults para productos normales.
+ * Arma el body del PATCH /cart/items tal como lo envía el frontend.
+ * `skuId` es el identificador de ítem de la PDP/PLP (el campo `id` de
+ * search_products), no su referencia comercial `sku`. Los campos más allá
+ * de skuId/quantity son banderas que el sitio manda con estos defaults para
+ * productos normales.
  */
 export function buildCartPatchBody(
   lines: Array<{

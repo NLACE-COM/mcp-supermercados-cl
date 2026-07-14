@@ -40,7 +40,9 @@ export function registerCartTools(server: McpServer): void {
             z.object({
               skuId: z
                 .string()
-                .describe("id del producto (skuId / data-cnstrc-item-id)"),
+                .describe(
+                  "ID del ítem del carro: usa el campo `id` de search_products, no el campo `sku` (que es la referencia comercial)."
+                ),
               quantity: z.number().int().positive(),
               measurementUnitUn: z.string().optional(),
               unitMultiplierUn: z.number().optional(),
