@@ -70,7 +70,7 @@ export function registerCartTools(server: McpServer): void {
         note:
           browserFetchNote("el carro tras agregar los ítems") +
           " Devuelve el JSON del carro en rawCartResult para normalizarlo.",
-        browserSnippet: jumboMutateSnippet("/cart/items", "PATCH", body),
+        browserSnippet: jumboMutateSnippet("/cart/items", "PATCH", body, "cart"),
       };
       if (rawCartResult !== undefined) {
         const cart = parseCart(rawCartResult, store);
@@ -123,7 +123,7 @@ export function registerCartTools(server: McpServer): void {
                 {
                   needsRawCart: true,
                   note: browserFetchNote("el carro del usuario"),
-                  browserSnippet: jumboFetchSnippet(path),
+                  browserSnippet: jumboFetchSnippet(path, "cart"),
                   request: {
                     method: "GET",
                     url: `${CART_BFF_BASE}${path}`,

@@ -46,7 +46,7 @@ export function registerGetSavedLists(server: McpServer): void {
                 {
                   needsRawLists: true,
                   note: browserFetchNote("las listas guardadas del usuario"),
-                  browserSnippet: jumboFetchSnippet(path),
+                  browserSnippet: jumboFetchSnippet(path, "lists"),
                 },
                 null,
                 2

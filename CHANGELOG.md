@@ -4,6 +4,36 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.5] - 2026-07-15
+
+Arregla el carro de Jumbo, que fallaba en el preflight CORS desde el navegador
+del usuario. Base: PR #11 de @cristiancs, más el arreglo del mismo problema en
+las listas guardadas.
+
+### Fixed
+
+- **Carro de Jumbo**: los snippets mandaban `WnOIGTaOkfFwotM8Ddw2` como
+  `apiKey` junto con `token`, `x-consumer`, `x-e-commerce` y `x-account`. Esa
+  key es la del servicio `salesChannel` (VTEX legacy), no la del BFF, y esos
+  cuatro headers los rechaza el preflight (el propio frontend los borra para
+  los servicios del BFF). Ahora los snippets mandan `Authorization: Bearer`,
+  la `apiKey` del servicio, `x-client-platform`, `x-client-version` y
+  `x-trace-id`, con `credentials: "include"` (PR #11).
+- **Listas guardadas**: `apiKey` **por servicio** (`JUMBO_API_KEYS` en
+  `src/adapters/cencosudBrowser.ts`). Cada servicio del BFF valida la suya, así
+  que `/lists` necesita `be-reg-groceries-jumbo-lists-9f222055975d` y el carro
+  `be-reg-groceries-jumbo-cart-rhk68rqi0adn`. Como ambos compartían la
+  constante, cambiar solo la del carro habría roto `get_saved_lists`.
+  `jumboFetchSnippet`/`jumboMutateSnippet` ahora exigen el servicio como
+  parámetro para que el compilador no deje repetir el error.
+
+### Changed
+
+- `add_to_cart` documenta que `skuId` es el campo `id` de `search_products`, no
+  la referencia comercial `sku` (PR #11).
+- `docs/captura-cencosud-2026-07-06.md` §4d: headers y mapa de `apiKey` por
+  servicio, verificados 2026-07-15 contra el bundle público del sitio.
+
 ## [1.4.4] - 2026-07-13
 
 Elimina el ruido del smoke live semanal: Tottus y Líder bloquean siempre el
