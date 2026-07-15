@@ -6,9 +6,18 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 
 ## [1.4.5] - 2026-07-15
 
-Arregla el carro de Jumbo, que fallaba en el preflight CORS desde el navegador
-del usuario. Base: PR #11 de @cristiancs, más el arreglo del mismo problema en
-las listas guardadas.
+Arregla el carro **y las listas guardadas** de Jumbo, que fallaban desde el
+navegador del usuario: Jumbo rotó el contrato de sesión del BFF completo, no
+solo el del carro. Base: PR #11 de @cristiancs, más el arreglo de las listas.
+
+Verificado con sesión real (sucursal `jumboclj775`) — las `apiKey` no son
+intercambiables, cada servicio rechaza la del otro:
+
+| apiKey enviada                       | `GET /lists` | `GET /cart` |
+| ------------------------------------ | ------------ | ----------- |
+| `...jumbo-lists-9f222055975d`        | **200**      | 403         |
+| `...jumbo-cart-rhk68rqi0adn`         | 403          | **200**     |
+| `WnOIGTaOkfFwotM8Ddw2` (la de 1.4.4) | 401          | 401         |
 
 ### Fixed
 
@@ -19,13 +28,14 @@ las listas guardadas.
   los servicios del BFF). Ahora los snippets mandan `Authorization: Bearer`,
   la `apiKey` del servicio, `x-client-platform`, `x-client-version` y
   `x-trace-id`, con `credentials: "include"` (PR #11).
-- **Listas guardadas**: `apiKey` **por servicio** (`JUMBO_API_KEYS` en
-  `src/adapters/cencosudBrowser.ts`). Cada servicio del BFF valida la suya, así
-  que `/lists` necesita `be-reg-groceries-jumbo-lists-9f222055975d` y el carro
-  `be-reg-groceries-jumbo-cart-rhk68rqi0adn`. Como ambos compartían la
-  constante, cambiar solo la del carro habría roto `get_saved_lists`.
-  `jumboFetchSnippet`/`jumboMutateSnippet` ahora exigen el servicio como
-  parámetro para que el compilador no deje repetir el error.
+- **Listas guardadas** (`get_saved_lists`): estaban rotas desde la 1.4.4 por la
+  misma causa —la key legacy da 401 también en `/lists`—, pero nadie lo había
+  notado: los tests de contrato no tocan la red. Ahora la `apiKey` va **por
+  servicio** (`JUMBO_API_KEYS` en `src/adapters/cencosudBrowser.ts`), porque
+  cada servicio del BFF valida solo la suya. Como carro y listas compartían la
+  constante de headers, arreglar solo el carro habría dejado las listas rotas
+  en silencio; `jumboFetchSnippet`/`jumboMutateSnippet` ahora exigen el
+  servicio como parámetro para que el compilador no deje repetir el error.
 
 ### Changed
 
