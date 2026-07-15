@@ -40,7 +40,9 @@ export function registerCartTools(server: McpServer): void {
             z.object({
               skuId: z
                 .string()
-                .describe("id del producto (skuId / data-cnstrc-item-id)"),
+                .describe(
+                  "ID del ítem del carro: usa el campo `id` de search_products, no el campo `sku` (que es la referencia comercial)."
+                ),
               quantity: z.number().int().positive(),
               measurementUnitUn: z.string().optional(),
               unitMultiplierUn: z.number().optional(),
@@ -68,7 +70,7 @@ export function registerCartTools(server: McpServer): void {
         note:
           browserFetchNote("el carro tras agregar los ítems") +
           " Devuelve el JSON del carro en rawCartResult para normalizarlo.",
-        browserSnippet: jumboMutateSnippet("/cart/items", "PATCH", body),
+        browserSnippet: jumboMutateSnippet("/cart/items", "PATCH", body, "cart"),
       };
       if (rawCartResult !== undefined) {
         const cart = parseCart(rawCartResult, store);
@@ -121,7 +123,7 @@ export function registerCartTools(server: McpServer): void {
                 {
                   needsRawCart: true,
                   note: browserFetchNote("el carro del usuario"),
-                  browserSnippet: jumboFetchSnippet(path),
+                  browserSnippet: jumboFetchSnippet(path, "cart"),
                   request: {
                     method: "GET",
                     url: `${CART_BFF_BASE}${path}`,

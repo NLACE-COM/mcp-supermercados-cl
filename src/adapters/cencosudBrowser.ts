@@ -18,31 +18,58 @@
 export const JUMBO_BFF_BASE = "https://be-reg-groceries-bff-jumbo.ecomm.cencosud.com";
 
 /**
- * Headers de sesión que el frontend de Jumbo envía al BFF. El token sale del
- * `localStorage` (`sessionDataToken`); el resto son constantes del banner.
- * `apiKey` es pública (va en el JS del sitio). Verificado 2026-07-07.
+ * `apiKey` pública del BFF de Jumbo, **por servicio**. No son intercambiables:
+ * cada servicio del BFF valida la suya, así que usar la del carro para /lists
+ * (o viceversa) hace fallar el request.
+ *
+ * Fuente: el propio frontend las lleva en su bundle (público) y las elige por
+ * servicio en un `switch` equivalente a este mapa. Verificado 2026-07-15 en
+ * `assets-jumbo.ecomm.cencosud.com` (chunk de configuración), donde conviven
+ * como `{ bff_cart, bff_lists, bff_catalog, ... }`.
+ *
+ * Nota histórica: hasta 2026-07-14 estos snippets mandaban
+ * `WnOIGTaOkfFwotM8Ddw2` para todo. Esa key es la del servicio `salesChannel`
+ * (VTEX legacy), no la del BFF — no volver a usarla aquí.
  */
-const JUMBO_SESSION_HEADERS_JS = `{
+const JUMBO_API_KEYS = {
+  cart: "be-reg-groceries-jumbo-cart-rhk68rqi0adn",
+  lists: "be-reg-groceries-jumbo-lists-9f222055975d",
+} as const;
+
+/** Servicio del BFF de Jumbo al que apunta un snippet (define la `apiKey`). */
+export type JumboBffService = keyof typeof JUMBO_API_KEYS;
+
+/**
+ * Headers que hoy usa el frontend de Jumbo contra el BFF. El token sale del
+ * `localStorage` (`sessionDataToken`) y la `apiKey` es pública (va en el JS del
+ * sitio). No incluir `token`, `x-consumer`, `x-e-commerce` ni `x-account`: el
+ * frontend los borra explícitamente para los servicios del BFF y Jumbo los
+ * rechaza en el preflight. `x-client-platform`, `x-client-version` y
+ * `x-trace-id`, en cambio, están permitidos y forman parte del contrato actual.
+ */
+function jumboSessionHeadersJs(service: JumboBffService): string {
+  return `{
     "Authorization": "Bearer " + localStorage.getItem("sessionDataToken"),
-    "token": localStorage.getItem("sessionDataToken"),
-    "apiKey": "WnOIGTaOkfFwotM8Ddw2",
-    "x-consumer": "jumbocl",
-    "x-e-commerce": "jumbo",
-    "x-account": "jumbocl",
+    "apiKey": ${JSON.stringify(JUMBO_API_KEYS[service])},
     "x-client-platform": "web",
+    "x-client-version": "3.3.98",
+    "x-trace-id": crypto.randomUUID(),
     "Accept": "application/json"
   }`;
+}
 
 /**
  * Genera un snippet JS listo para pegar en la consola (o ejecutar vía
  * automatización) de una pestaña logueada de www.jumbo.cl. Devuelve el JSON
- * que luego se pasa a la tool. `path` es la ruta del BFF (con querystring).
+ * que luego se pasa a la tool. `path` es la ruta del BFF (con querystring) y
+ * `service` decide la `apiKey`: tiene que ser la del servicio que sirve `path`.
  */
-export function jumboFetchSnippet(path: string): string {
+export function jumboFetchSnippet(path: string, service: JumboBffService): string {
   return (
     `// Ejecutar en una pestaña YA LOGUEADA de https://www.jumbo.cl (mismo origen).\n` +
     `await fetch(${JSON.stringify(JUMBO_BFF_BASE + path)}, {\n` +
-    `  headers: ${JUMBO_SESSION_HEADERS_JS}\n` +
+    `  credentials: "include",\n` +
+    `  headers: ${jumboSessionHeadersJs(service)}\n` +
     `}).then(r => r.json())`
   );
 }
@@ -54,16 +81,18 @@ export function jumboFetchSnippet(path: string): string {
 export function jumboMutateSnippet(
   path: string,
   method: "POST" | "PATCH",
-  body: unknown
+  body: unknown,
+  service: JumboBffService
 ): string {
   return (
     `// Ejecutar en una pestaña YA LOGUEADA de https://www.jumbo.cl (mismo origen).\n` +
     `await fetch(${JSON.stringify(JUMBO_BFF_BASE + path)}, {\n` +
+    `  credentials: "include",\n` +
     `  method: ${JSON.stringify(method)},\n` +
     `  body: JSON.stringify(${JSON.stringify(body)}),\n` +
     `  headers: {\n` +
     `    "Content-Type": "application/json",\n` +
-    `    ...${JUMBO_SESSION_HEADERS_JS}\n` +
+    `    ...${jumboSessionHeadersJs(service)}\n` +
     `  }\n` +
     `}).then(r => r.json())`
   );

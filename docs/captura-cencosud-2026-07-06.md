@@ -199,9 +199,21 @@ GET   /cart?store={branchId}&simulationTotals=true   → estado del carro
 PATCH /cart/items                                     → agregar/actualizar
 ```
 
-- **Headers** (autenticados): `token` / `Authorization`, `apiKey`, `x-consumer`,
-  `x-e-commerce`, `x-account`. El token viene del localStorage → operar desde
-  el navegador del usuario.
+- **Headers** (autenticados, actualizado 2026-07-15): `Authorization: Bearer
+{sessionDataToken}`, `apiKey`, `x-client-platform: web`, `x-client-version`,
+  `x-trace-id`. El token viene del localStorage → operar desde el navegador del
+  usuario. **No** mandar `token`, `x-consumer`, `x-e-commerce` ni `x-account`:
+  el frontend los borra para los servicios del BFF y el preflight los rechaza.
+- **`apiKey` por servicio** (públicas, salen del bundle del sitio). No son
+  intercambiables — cada servicio valida la suya:
+  ```
+  cart    → be-reg-groceries-jumbo-cart-rhk68rqi0adn
+  lists   → be-reg-groceries-jumbo-lists-9f222055975d
+  catalog → be-reg-groceries-jumbo-catalog-w54byfvkmju5
+  ```
+  La key `WnOIGTaOkfFwotM8Ddw2` que usábamos antes es la de `salesChannel`
+  (VTEX legacy), no la del BFF. Mapa completo en el chunk de configuración de
+  `assets-jumbo.ecomm.cencosud.com` (objeto `{ bff_cart, bff_lists, ... }`).
 - **Body de PATCH /cart/items** (verificado):
   ```json
   {
