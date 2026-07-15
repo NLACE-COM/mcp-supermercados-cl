@@ -29,5 +29,17 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
     },
+  },
+  {
+    // Scripts sueltos de Node (no pasan por tsc, que es de donde el resto del
+    // proyecto saca estos globals).
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        setTimeout: "readonly",
+      },
+    },
   }
 );
