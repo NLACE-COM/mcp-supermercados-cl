@@ -220,7 +220,7 @@ describe("CencosudAdapter · ofertas (browse de colección)", () => {
     const products = await a.getOffers({ limit: 3 });
 
     const url = new URL(seen[0]);
-    expect(url.pathname).toBe("/browse/collection_id/30399");
+    expect(url.pathname).toBe("/browse/collection_id/30509");
     expect(url.searchParams.get("key")).toBe("key_JopvNXKS61kwGkBe");
 
     expect(products.length).toBeGreaterThan(0);
@@ -232,25 +232,22 @@ describe("CencosudAdapter · ofertas (browse de colección)", () => {
     }
   });
 
-  it("primeOnly usa la colección Prime y marca clubOnly", async () => {
-    const seen: string[] = [];
+  it("primeOnly sin colección Prime lanza error accionable (landing discontinuado)", async () => {
+    // Jumbo discontinuó /ofertas-prime (colección 30307) el 2026-07-20. Sin
+    // primeOffersCollectionId, getOffers({primeOnly}) NO debe pegarle a la red
+    // con un id muerto: degrada a un error accionable que apunta a get_product.
     const fakeHttp: HttpFetcher = {
-      async getJson<T>(url: string): Promise<T> {
-        seen.push(url);
-        return offersFixture as T;
+      async getJson<T>(): Promise<T> {
+        throw new Error("no debería llamarse: falta la colección Prime");
       },
       async getText(): Promise<string> {
         throw new Error("no debería llamarse");
       },
     };
     const a = new CencosudAdapter(JUMBO_CONFIG, fakeHttp, "test-uuid");
-    const products = await a.getOffers({ limit: 3, primeOnly: true });
-
-    expect(new URL(seen[0]).pathname).toBe("/browse/collection_id/30307");
-    for (const p of products) {
-      expect(p.offer?.clubOnly).toBe(true);
-      expect(p.offer?.type).toBe("club");
-    }
+    await expect(a.getOffers({ limit: 3, primeOnly: true })).rejects.toThrow(
+      /no está disponible|colección/
+    );
   });
 
   it("resuelve categoría a group_id y filtra", async () => {

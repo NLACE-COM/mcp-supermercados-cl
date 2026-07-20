@@ -84,9 +84,17 @@ export const JUMBO_CONFIG: CencosudBannerConfig = {
   // acceso a cuentas ni permite escribir. Sin ella el buscador no responde.
   constructorKey: "key_JopvNXKS61kwGkBe",
   siteBaseUrl: "https://www.jumbo.cl",
-  // Colecciones verificadas 2026-07-06: /jumbo-ofertas y /ofertas-prime.
-  offersCollectionId: "30399",
-  primeOffersCollectionId: "30307",
+  // Colección de ofertas (/jumbo-ofertas). Jumbo la ROTA cada cierto tiempo
+  // (30399 → 30509 el 2026-07-20, ~5.300 productos): cuando el smoke live de
+  // getOffers dé HTTP 404, recupera el id nuevo abriendo www.jumbo.cl/jumbo-ofertas
+  // y leyendo `originalUrl":"/busca?fq=H%3A<id>"` del SSR. NO es cambio de
+  // formato: la fixture sigue válida, solo cambia el id de la URL.
+  offersCollectionId: "30509",
+  // El landing de ofertas exclusivas Prime (/ofertas-prime, antes colección
+  // 30307) fue DISCONTINUADO por Jumbo (2026-07-20): la ruta ya no resuelve a
+  // una colección. Sin primeOffersCollectionId, get_offers({primeOnly}) devuelve
+  // un error accionable en vez de un 404 crudo. El precio socio exacto sigue
+  // disponible por producto vía get_product (memberPrice).
   pdpStyle: "react-query",
 };
 

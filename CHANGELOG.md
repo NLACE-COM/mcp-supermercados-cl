@@ -4,7 +4,17 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
-## [No publicado]
+## [1.4.6] - 2026-07-20
+
+Arregla `get_offers` de Jumbo, que fallaba con **HTTP 404** (lo detectó el
+smoke live semanal, issue #15). No es un cambio de formato: Jumbo **rota los
+ids de sus colecciones de Constructor**, y los que teníamos hardcodeados
+quedaron muertos. La fixture de ofertas sigue válida (el JSON no cambió de
+forma), solo cambió el id de la URL. Además cierra dos huecos de proceso:
+cobertura de las tools de sesión (#12) y publicación automática a npm (#14).
+
+Verificado en vivo desde IP residencial: smoke `getOffers` 4/4 en verde
+(colección nueva: ~5.300 productos con descuento).
 
 ### Added
 
@@ -26,9 +36,23 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
   y, si es grande (7,8 GB en la máquina de prueba), el lanzamiento ni completa
   —muere por timeout sin conectar—. Con perfil dedicado el smoke corre en ~8 s
   sin tocar el navegador del usuario.
+- **Workflow de release** (`.github/workflows/release.yml`, cierra #14): publica
+  a npm y crea el release de GitHub cuando se pushea un tag `vX.Y.Z`. Verifica
+  que el tag coincida con `package.json`, corre la batería de CI, publica con
+  `NPM_TOKEN` de los secrets vía `setup-node` (sin token en texto plano) y
+  `--provenance`, y saca las notas del release de este CHANGELOG. Resuelve la
+  fricción de publicar a mano (2FA de npm, `NPM_TOKEN` que no basta solo):
+  publicar la 1.4.5 costó ocho intentos. Setup una vez: secret `NPM_TOKEN`
+  granular con bypass 2FA en Settings → Secrets.
 
 ### Fixed
 
+- **`get_offers` de Jumbo (ofertas generales)**: la colección `/jumbo-ofertas`
+  rotó de `collection_id/30399` a `30509`. El id nuevo se recupera abriendo
+  www.jumbo.cl/jumbo-ofertas y leyendo `originalUrl":"/busca?fq=H%3A<id>"` del
+  SSR (documentado en `docs/captura-cencosud-2026-07-06.md` §3b y en el
+  comentario de `JUMBO_CONFIG`). Cuando el smoke vuelva a dar 404, ese es el
+  procedimiento.
 - **`npm test` se rompía al instalar Playwright** (`tests/adapters/playwrightBridge.test.ts`):
   los tests daban por hecho que Playwright NO estaba en `node_modules`, así que
   seguir el README (`npm install playwright`, necesario para el puente) hacía
@@ -36,6 +60,16 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
   navegador real y navegaban a super.lider.cl, rompiendo la promesa de que no
   tocan la red. Ahora la ausencia del módulo se simula con `vi.mock` y el
   resultado no depende del entorno (verificado con y sin Playwright instalado).
+
+### Changed
+
+- **`get_offers({ primeOnly: true })` de Jumbo**: el landing de ofertas
+  exclusivas socio (`/ofertas-prime`, colección `30307`) fue **discontinuado**
+  por Jumbo — la ruta ya no resuelve a una colección (200 con shell genérico,
+  sin redirect). Se quitó `primeOffersCollectionId` de `JUMBO_CONFIG`, así que
+  `primeOnly` degrada a un **error accionable** en vez de un 404 crudo. El
+  precio socio exacto sigue disponible por producto vía `get_product`
+  (`memberPrice`). Descripciones de `get_offers` actualizadas.
 
 ## [1.4.5] - 2026-07-15
 

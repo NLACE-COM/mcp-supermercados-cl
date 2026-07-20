@@ -11,8 +11,9 @@ export function registerGetOffers(server: McpServer): void {
       description:
         "Lista las ofertas vigentes del supermercado (precio rebajado: `price` vigente vs `listPrice` normal). " +
         'Filtrable por categoría (ej. "Despensa", "Lácteos") y por sucursal (`branchId`). ' +
-        "Con `primeOnly` devuelve las ofertas exclusivas para socios Jumbo Prime " +
-        "(el monto exacto del precio socio se consulta con get_product).",
+        "El precio socio exacto se consulta con get_product (`memberPrice`). Nota: " +
+        "`primeOnly` (ofertas exclusivas socios) ya no está disponible en Jumbo — " +
+        "el landing dedicado fue discontinuado; devuelve un error accionable.",
       inputSchema: {
         store: z
           .enum(["jumbo", "santaisabel"])
@@ -39,7 +40,10 @@ export function registerGetOffers(server: McpServer): void {
         primeOnly: z
           .boolean()
           .default(false)
-          .describe("true = solo ofertas exclusivas de socios Jumbo Prime."),
+          .describe(
+            "true = solo ofertas exclusivas de socios Jumbo Prime. " +
+              "Discontinuado por Jumbo (2026-07): devuelve error accionable."
+          ),
       },
     },
     async ({ store, category, limit, page, branchId, primeOnly }) => {
