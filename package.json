@@ -47,6 +47,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run tests/adapters",
     "test:live": "LIVE=1 vitest run tests/live",
+    "test:session": "LIVE_SESSION=1 vitest run tests/live/jumbo-sesion.live.test.ts",
+    "session:login": "node scripts/session-login.mjs",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "prepublishOnly": "npm run build"
   },

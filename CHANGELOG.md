@@ -4,6 +4,39 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [No publicado]
+
+### Added
+
+- **Smoke de sesión** (`npm run test:session`, cierra #12): cubre las tools que
+  dependen del navegador logueado (carro, listas guardadas, frecuentes), que no
+  cubría nada — los tests de contrato usan fixtures y el smoke live solo mira
+  `search_products`. Ese hueco es el que dejó el carro y las listas rotos dos
+  días en la 1.4.4 hasta que lo reportó un usuario. Corre contra el sitio real
+  con el puente de Playwright, ejecuta los snippets **de producción** (un test
+  con headers propios pasaría mientras producción está rota) y pasa la respuesta
+  por los parsers de producción. Verificado que detecta el bug que lo motiva: con
+  la `apiKey` cruzada falla en el test correcto y explica el arreglo.
+- **`npm run session:login`** (`scripts/session-login.mjs`): login inicial, una
+  sola vez, sobre un perfil de Chrome **dedicado** (`~/.supermercados-smoke-profile`,
+  configurable con `SUPERMERCADOS_SMOKE_PROFILE`). Las credenciales las escribe
+  el usuario en la ventana; el proyecto solo comprueba que el token exista.
+  Perfil aparte y no el del usuario porque `launchPersistentContext` toma el
+  lock exclusivo: con el perfil diario habría que cerrar Chrome en cada corrida
+  y, si es grande (7,8 GB en la máquina de prueba), el lanzamiento ni completa
+  —muere por timeout sin conectar—. Con perfil dedicado el smoke corre en ~8 s
+  sin tocar el navegador del usuario.
+
+### Fixed
+
+- **`npm test` se rompía al instalar Playwright** (`tests/adapters/playwrightBridge.test.ts`):
+  los tests daban por hecho que Playwright NO estaba en `node_modules`, así que
+  seguir el README (`npm install playwright`, necesario para el puente) hacía
+  fallar la suite. Peor: en esa situación estos tests de contrato lanzaban un
+  navegador real y navegaban a super.lider.cl, rompiendo la promesa de que no
+  tocan la red. Ahora la ausencia del módulo se simula con `vi.mock` y el
+  resultado no depende del entorno (verificado con y sin Playwright instalado).
+
 ## [1.4.5] - 2026-07-15
 
 Arregla el carro **y las listas guardadas** de Jumbo, que fallaban desde el

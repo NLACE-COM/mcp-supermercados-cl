@@ -202,12 +202,45 @@ falso positivo.
 ## 🧪 Desarrollo y tests
 
 ```bash
-npm test           # tests de contrato con fixtures reales (sin red) — 132 tests
-npm run test:live  # smoke contra los sitios reales (opt-in, LIVE=1)
-npm run typecheck  # tsc --noEmit
-npm run lint       # ESLint
-npm run format     # Prettier (--write); format:check para verificar
+npm test              # tests de contrato con fixtures reales (sin red) — 160 tests
+npm run test:live     # smoke contra los sitios reales (opt-in, LIVE=1)
+npm run test:session  # smoke de las tools de sesión de Jumbo (requiere tu navegador)
+npm run typecheck     # tsc --noEmit
+npm run lint          # ESLint
+npm run format        # Prettier (--write); format:check para verificar
 ```
+
+### Smoke de sesión (`test:session`)
+
+Las tools de sesión de Jumbo (carro, listas guardadas, frecuentes) necesitan el
+token que vive en el `localStorage` de un navegador logueado, así que ni los
+tests de contrato ni el smoke live las cubren. Este smoke cierra ese hueco
+(issue #12) con el puente de Playwright sobre un perfil **dedicado**:
+
+```bash
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save playwright  # una vez
+npm run session:login   # una vez: abre Chrome, inicias sesión y eliges tienda
+npm run test:session    # cada vez que quieras verificar (~30 s)
+```
+
+`session:login` abre una ventana con un perfil aparte
+(`~/.supermercados-smoke-profile`, configurable con `SUPERMERCADOS_SMOKE_PROFILE`),
+espera a que inicies sesión y se cierra sola. Tus credenciales las escribes tú
+en esa ventana; el proyecto solo comprueba que el token exista, nunca su valor.
+
+> **Por qué un perfil aparte y no el tuyo**: `launchPersistentContext` toma el
+> lock exclusivo del perfil, así que usar el de tu Chrome diario obliga a
+> cerrarlo en cada corrida — y sobre un perfil grande (7,8 GB al probarlo) el
+> lanzamiento ni siquiera completa: muere por timeout sin llegar a conectar. Con
+> perfil dedicado arranca en ~2 s y tu navegador ni se entera.
+
+Qué valida: que el sitio real siga **aceptando** los requests que arman los
+snippets de producción y que los parsers entiendan la respuesta.
+
+**Vale la pena correrlo antes de publicar una versión.** Sin él, un cambio de
+contrato de Jumbo (rotación de `apiKey`, cambio del DOM de frecuentes) llega a
+producción sin aviso: pasó en la 1.4.4, donde el carro y las listas estuvieron
+rotos dos días hasta que lo reportó un usuario.
 
 Los tests de contrato usan respuestas reales grabadas en
 [`tests/fixtures/`](tests/fixtures). Los live requieren red y, para
