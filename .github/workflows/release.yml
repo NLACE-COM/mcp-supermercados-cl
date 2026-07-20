@@ -1,0 +1,87 @@
+name: Release
+
+# Publica a npm y crea el release de GitHub cuando se pushea un tag `vX.Y.Z`.
+# Cierra #14: el flujo manual (`npm publish` desde la máquina del maintainer)
+# choca con el 2FA de npm y con que `NPM_TOKEN` no basta por sí solo. Acá el
+# token va UNA vez en Settings → Secrets → Actions como `NPM_TOKEN` (granular,
+# con bypass 2FA y permiso de publish sobre el paquete). Después publicar es
+# `git push --tags` y nadie vuelve a pegar un token en ningún lado.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: Publicar a npm y crear el release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # crear el release de GitHub
+      id-token: write # provenance de npm (supply-chain)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          # Escribe el .npmrc que apunta NODE_AUTH_TOKEN al registry; el token
+          # nunca queda en texto plano en el repo ni en el historial.
+          registry-url: "https://registry.npmjs.org"
+
+      # Guard: el tag y package.json TIENEN que coincidir. Evita publicar por
+      # accidente un tag mal puesto (la nota final del issue #14).
+      - name: Verificar que el tag coincide con package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG  package.json=$PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::El tag ($TAG) no coincide con package.json ($PKG). No se publica."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Misma batería que ci.yml: si algo no pasa, no se publica.
+      - name: Prettier (formato)
+        run: npm run format:check
+      - name: ESLint
+        run: npm run lint
+      - name: TypeScript (typecheck)
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Tests de contrato
+        run: npm test
+
+      # Publica exactamente el commit taggeado. `--provenance` firma el origen
+      # (repo + workflow) para trazabilidad; requiere el paquete público.
+      - name: Publicar a npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Extrae la sección de esta versión del CHANGELOG para las notas del
+      # release. Si no la encuentra, cae a un cuerpo mínimo (no rompe el release).
+      - name: Extraer notas del CHANGELOG
+        id: notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" {grab=1; next}
+            grab && /^## \[/ {exit}
+            grab {print}
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "Ver CHANGELOG.md para los detalles de esta versión." > release-notes.md
+          fi
+
+      - name: Crear el release de GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          name: ${{ github.ref_name }}
