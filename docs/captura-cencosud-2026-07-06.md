@@ -110,9 +110,23 @@ Las páginas de ofertas son browse de Constructor sobre colecciones fijas
 (el SSR expone `originalUrl: "/busca?fq=H%3A<id>"`):
 
 ```
-GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30399   ← /jumbo-ofertas (≈5.100 productos)
-GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30307   ← /ofertas-prime (exclusivas socios)
+GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30509   ← /jumbo-ofertas (≈5.300 productos)
+GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30307   ← /ofertas-prime (DISCONTINUADO 2026-07)
 ```
+
+> **Los ids de colección ROTAN.** Verificado 2026-07-20 (issue #15): el smoke
+> live de `getOffers` empezó a dar HTTP 404 porque `/jumbo-ofertas` pasó de
+> `30399` a `30509`. Para recuperar el id vigente cuando vuelva a romperse:
+> abrir `https://www.jumbo.cl/jumbo-ofertas` y leer el campo
+> `originalUrl":"/busca?fq=H%3A<id>"` del SSR (el `<id>` es el `collection_id`).
+> Es una rotación de id, **no** un cambio de formato: la fixture de ofertas
+> sigue válida, solo cambia la URL.
+>
+> El landing `/ofertas-prime` (colección `30307`) fue **retirado** por Jumbo en
+> la misma fecha: la ruta responde 200 con el shell genérico y sin colección.
+> Por eso `JUMBO_CONFIG` ya no lleva `primeOffersCollectionId` y
+> `get_offers({ primeOnly })` devuelve un error accionable. El precio socio
+> exacto se obtiene igual por producto con `get_product` (`memberPrice`).
 
 - Mismos params que la búsqueda (`key`, `i`, `s`, `page`, `num_results_per_page`, `variations_map`).
 - Filtro por categoría: `filters[group_id]={id}` (ej. `27` = Despensa). El
