@@ -29,6 +29,7 @@ import {
   pickBestOffersCollection,
   type CollectionProbe,
 } from "./cencosudOffersCollection.js";
+import { extractRscPayload, findProductInRscPayload } from "./rscPayload.js";
 import { type StoreAdapter } from "./base.js";
 import { extractFrequentCardsFromHtml, parseFrequentCard } from "./cencosudSession.js";
 import { parseCart } from "./cencosudCart.js";
@@ -388,10 +389,31 @@ export class CencosudAdapter implements StoreAdapter {
 
     return this.productCache.getOrFetch(`pdp:${url}`, async () => {
       const html = await this.http.getText(url);
-      const state = extractDehydratedState(html);
-      if (!state) return null;
-      return this.mapPdpState(state, url);
+      return this.parsePdpHtml(html, url);
     });
+  }
+
+  /**
+   * Saca el producto del HTML de la PDP. Público para testear por contrato con
+   * las fixtures grabadas.
+   *
+   * Soporta los DOS formatos de PDP de Jumbo, porque el sitio migró de uno al
+   * otro el 2026-08 y el viejo puede seguir vivo en algún banner o volver:
+   * - App Router (actual): el producto viaja en el stream RSC `self.__next_f`.
+   * - Pages Router (anterior): estado deshidratado de React Query.
+   */
+  parsePdpHtml(html: string, url: string): Product | null {
+    const state = extractDehydratedState(html);
+    if (state) {
+      const fromDehydrated = this.mapPdpState(state, url);
+      if (fromDehydrated) return fromDehydrated;
+    }
+
+    const payload = extractRscPayload(html);
+    if (!payload) return null;
+    const data = findProductInRscPayload(payload, this.slugFromUrl(url));
+    if (!data) return null;
+    return this.mapPdpData(data, url);
   }
 
   /** Slug pelado desde una URL/path de producto (…/{slug}/p). */
