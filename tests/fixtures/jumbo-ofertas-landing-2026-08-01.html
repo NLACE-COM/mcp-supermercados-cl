@@ -1,0 +1,46 @@
+<!--
+  Fragmento REAL del SSR de https://www.jumbo.cl/jumbo-ofertas (2026-08-01).
+
+  Recortado del documento completo (~4,8 MB) dejando solo las dos huellas de
+  las que se recuperan los collection_id candidatos:
+    1. las listas `collections` de los productos del SSR (escapadas, tal como
+       las emite Next dentro de sus strings JS),
+    2. los enlaces de banner `href="/busca?fq=H%3A<id>"`.
+
+  Ojo: esta página YA NO trae el campo `originalUrl":"/busca?fq=H%3A<id>"` que
+  documentaba captura-cencosud §3b; por eso el descubrimiento se basa en estas
+  otras dos huellas. Regrabar si Jumbo cambia el formato del landing.
+-->
+<!doctype html>
+<html lang="es">
+  <head>
+    <title>Jumbo Ofertas | Jumbo.cl</title>
+  </head>
+  <body>
+    <div class="carrusel">
+      <a
+        data-gtm-event="Interaction"
+        data-gtm-tag="{&quot;creative&quot;:&quot;Banner secundario 0- Lomo liso al vacío importado&quot;,&quot;position&quot;:&quot;slot1&quot;}"
+        href="/busca?fq=H%3A30765&amp;nombre_promo=landing-carrusel-fdm-ciclos-lomo-liso-al-vacio-importado-s31"
+        >Lomo liso</a
+      >
+      <a
+        data-gtm-tag="{&quot;creative&quot;:&quot;Banner secundario 0- Atún lomitos&quot;,&quot;position&quot;:&quot;slot2&quot;}"
+        href="/busca?fq=H%3A30771&amp;nombre_promo=landing-carrusel-fdm-ciclos-atun-lomitos-en-aceite"
+        >Atún lomitos</a
+      >
+    </div>
+    <script>
+      self.__next_f.push([
+        1,
+        '10:["$","div",null,{"products":[
+        {\"id\":\"49984\",\"collections\":[\"7489\",\"17114\",\"17115\",\"23175\",\"26253\",\"28992\",\"30765\",\"30774\",\"30930\"]},
+        {\"id\":\"500\",\"collections\":[\"23175\",\"25334\",\"25422\",\"28992\",\"30774\",\"30930\",\"30632\"]},
+        {\"id\":\"147797\",\"collections\":[\"23175\",\"25333\",\"28992\",\"30774\",\"30930\",\"30762\"]},
+        {\"id\":\"8124\",\"collections\":[\"19270\",\"25422\",\"28992\",\"30930\",\"30632\"]},
+        {\"id\":\"88112\",\"collections\":[\"8865\",\"28992\",\"30930\",\"30762\"]}
+        ]}]',
+      ]);
+    </script>
+  </body>
+</html>

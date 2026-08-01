@@ -106,24 +106,51 @@ Prime 1600.
 
 ## 3b. Ofertas: browse de colecciones (VERIFICADO)
 
-Las páginas de ofertas son browse de Constructor sobre colecciones fijas
-(el SSR expone `originalUrl: "/busca?fq=H%3A<id>"`):
+Las ofertas son browse de Constructor sobre colecciones:
 
 ```
-GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30509   ← /jumbo-ofertas (≈5.300 productos)
+GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30930   ← ofertas vigentes al 2026-08-01
 GET https://pwcdauseo-zone.cnstrc.com/browse/collection_id/30307   ← /ofertas-prime (DISCONTINUADO 2026-07)
 ```
 
-> **Los ids de colección ROTAN.** Verificado 2026-07-20 (issue #15): el smoke
-> live de `getOffers` empezó a dar HTTP 404 porque `/jumbo-ofertas` pasó de
-> `30399` a `30509`. Para recuperar el id vigente cuando vuelva a romperse:
-> abrir `https://www.jumbo.cl/jumbo-ofertas` y leer el campo
-> `originalUrl":"/busca?fq=H%3A<id>"` del SSR (el `<id>` es el `collection_id`).
-> Es una rotación de id, **no** un cambio de formato: la fixture de ofertas
-> sigue válida, solo cambia la URL.
+> **Las colecciones de ofertas EXPIRAN: no hay un id fijo.** Verificado
+> 2026-08-01 (issue #18). No son "la colección de ofertas de Jumbo" sino
+> colecciones de **campaña**, con `data.dateTo`; cuando el ciclo termina, el id
+> deja de existir y responde **HTTP 404**. Ya pasó dos veces en tres semanas:
+> `30399` → `30509` (issue #15) → 404 (issue #18).
 >
-> El landing `/ofertas-prime` (colección `30307`) fue **retirado** por Jumbo en
-> la misma fecha: la ruta responde 200 con el shell genérico y sin colección.
+> Y en un momento dado hay **varias activas en paralelo**, una por ciclo
+> (sondeo real del 2026-08-01):
+>
+> | id    | display_name                                       | productos | vence |
+> | ----- | -------------------------------------------------- | --------- | ----- |
+> | 30930 | Collection-Todaslasofertaslpmciclo2ladespensa      | 8.714     | 18-08 |
+> | 30774 | Collection-Todaslasofertaslpmciclo1ladespensa      | 5.632     | 15-08 |
+> | 30632 | Collection-Todaslasofertasdelciclo5LPM             | 5.426     | 02-08 |
+> | 30762 | Collection-TodaslasofertasdelaLPMAgostoaniversario | 4.113     | 28-08 |
+>
+> **Ya no hay que parchear el id a mano**: `CencosudAdapter` lo redescubre solo
+> (`src/adapters/cencosudOffersCollection.ts`). Ante un 404 lee el SSR del
+> landing, saca los ids candidatos, los sondea contra Constructor y se queda
+> con la colección activa, no vencida, que matchee `todaslasofertas` y tenga
+> más productos. El `offersCollectionId` de `JUMBO_CONFIG` es solo la semilla.
+>
+> **El método anterior de recuperación ya NO sirve**: esta guía decía leer
+> `originalUrl":"/busca?fq=H%3A<id>"` del SSR de `/jumbo-ofertas`. Ese campo
+> desapareció — hoy la página es un landing de carruseles de campaña, no un
+> browse de una colección única. Las huellas que sí quedan (y que usa el
+> descubrimiento) son las listas `"collections":[...]` de cada producto del SSR
+> y los `href="/busca?fq=H%3A<id>"` de los banners.
+>
+> Cómo verificar a mano una colección:
+>
+> ```bash
+> curl -s "https://pwcdauseo-zone.cnstrc.com/browse/collection_id/<id>?key=key_JopvNXKS61kwGkBe&i=<uuid>&s=1&c=ciojs-2.1436.4&page=1&num_results_per_page=1" \
+>   | python3 -c "import sys,json;r=json.load(sys.stdin)['response'];c=r['collection'];print(c['id'],c['display_name'],r['total_num_results'],c['data'].get('dateTo'))"
+> ```
+>
+> El landing `/ofertas-prime` (colección `30307`) fue **retirado** por Jumbo el
+> 2026-07-20: la ruta responde 200 con el shell genérico y sin colección.
 > Por eso `JUMBO_CONFIG` ya no lleva `primeOffersCollectionId` y
 > `get_offers({ primeOnly })` devuelve un error accionable. El precio socio
 > exacto se obtiene igual por producto con `get_product` (`memberPrice`).
