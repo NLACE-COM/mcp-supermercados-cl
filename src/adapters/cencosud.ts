@@ -18,7 +18,17 @@ import type {
   ShoppingList,
   StoreId,
 } from "../core/types.js";
-import { defaultHttpClient, type HttpFetcher } from "../http/client.js";
+import {
+  defaultHttpClient,
+  HttpStatusError,
+  type HttpFetcher,
+} from "../http/client.js";
+import {
+  extractCollectionIdCandidates,
+  parseCollectionDateTo,
+  pickBestOffersCollection,
+  type CollectionProbe,
+} from "./cencosudOffersCollection.js";
 import { type StoreAdapter } from "./base.js";
 import { extractFrequentCardsFromHtml, parseFrequentCard } from "./cencosudSession.js";
 import { parseCart } from "./cencosudCart.js";
@@ -58,8 +68,20 @@ export interface CencosudBannerConfig {
    * React Query; Santa Isabel: VTEX renderData con comuna), así que no todos
    * soportan lo mismo aún.
    */
+  /**
+   * Colección de ofertas conocida al momento de publicar. Es solo la SEMILLA:
+   * estas colecciones son de campaña y expiran, así que el adaptador
+   * redescubre el id vigente cuando esta deja de responder (ver
+   * `offersLandingPath` y cencosudOffersCollection.ts).
+   */
   offersCollectionId?: string;
   primeOffersCollectionId?: string;
+  /**
+   * Landing desde donde redescubrir la colección de ofertas vigente cuando la
+   * configurada expira. Sin esto no hay auto-reparación (Santa Isabel: su
+   * página de ofertas es VTEX, no colecciones Constructor).
+   */
+  offersLandingPath?: string;
   /**
    * Estilo de PDP para getProduct/memberPrice.
    * - "react-query": estado deshidratado del HTML SSR (Jumbo).
@@ -84,12 +106,13 @@ export const JUMBO_CONFIG: CencosudBannerConfig = {
   // acceso a cuentas ni permite escribir. Sin ella el buscador no responde.
   constructorKey: "key_JopvNXKS61kwGkBe",
   siteBaseUrl: "https://www.jumbo.cl",
-  // Colección de ofertas (/jumbo-ofertas). Jumbo la ROTA cada cierto tiempo
-  // (30399 → 30509 el 2026-07-20, ~5.300 productos): cuando el smoke live de
-  // getOffers dé HTTP 404, recupera el id nuevo abriendo www.jumbo.cl/jumbo-ofertas
-  // y leyendo `originalUrl":"/busca?fq=H%3A<id>"` del SSR. NO es cambio de
-  // formato: la fixture sigue válida, solo cambia el id de la URL.
-  offersCollectionId: "30509",
+  // Semilla de la colección de ofertas (/jumbo-ofertas), vigente al 2026-08-01.
+  // Estos ids EXPIRAN: son colecciones de campaña con `dateTo`, no un id fijo
+  // (30399 → 30509 → 404 en tres semanas, issues #15 y #18). Ya no hace falta
+  // parchearlo a mano: si responde 404, el adaptador redescubre el id vigente
+  // desde el SSR de offersLandingPath (ver cencosudOffersCollection.ts).
+  offersCollectionId: "30930",
+  offersLandingPath: "/jumbo-ofertas",
   // El landing de ofertas exclusivas Prime (/ofertas-prime, antes colección
   // 30307) fue DISCONTINUADO por Jumbo (2026-07-20): la ruta ya no resuelve a
   // una colección. Sin primeOffersCollectionId, get_offers({primeOnly}) devuelve
@@ -137,6 +160,17 @@ export const SANTA_ISABEL_CONFIG: CencosudBannerConfig = {
 /** Versión del cliente ciojs observada en producción (param `c`). */
 const CIO_CLIENT_VERSION = "ciojs-2.1436.4";
 
+/** Clave única del cache del id de ofertas redescubierto. */
+const OFFERS_COLLECTION_KEY = "offers-collection";
+
+/**
+ * Tope de candidatos a sondear al redescubrir la colección de ofertas: cada
+ * uno es una request. En la captura del 2026-08-01 la colección correcta salía
+ * dentro de los 4 primeros por frecuencia, así que 8 da margen sin castigar la
+ * latencia (solo se paga cuando la colección expira, y queda cacheado).
+ */
+const MAX_OFFERS_COLLECTION_PROBES = 8;
+
 // --- Tipos mínimos de la respuesta de Constructor.io (solo lo que usamos) ---
 
 interface ConstructorSearchResponse {
@@ -144,6 +178,20 @@ interface ConstructorSearchResponse {
     results?: ConstructorResult[];
     total_num_results?: number;
     groups?: ConstructorGroup[];
+    /** Metadatos de la colección en un browse (id, nombre, vigencia). */
+    collection?: ConstructorCollection;
+  };
+}
+
+/** `response.collection` de un browse por colección (verificado 2026-08-01). */
+interface ConstructorCollection {
+  id?: string;
+  display_name?: string;
+  data?: {
+    /** "true"/"false" como string. */
+    active?: string;
+    /** Fecha de término de la campaña, con comillas literales dentro. */
+    dateTo?: string;
   };
 }
 
@@ -179,6 +227,11 @@ export class CencosudAdapter implements StoreAdapter {
   /** Cache 15 min por consulta (regla del plan) para no regolpear el sitio. */
   private readonly cache = new TtlCache<Product[]>();
   private readonly productCache = new TtlCache<Product | null>();
+  /**
+   * Id de la colección de ofertas ya redescubierto, para no repetir el
+   * sondeo en cada llamada. Se invalida solo con el TTL del cache.
+   */
+  private readonly offersCollectionCache = new TtlCache<string>();
 
   constructor(
     config: CencosudBannerConfig = JUMBO_CONFIG,
@@ -495,9 +548,13 @@ export class CencosudAdapter implements StoreAdapter {
   }
 
   private async fetchOffers(opts: OfferOpts): Promise<Product[]> {
-    const collectionId = opts.primeOnly
+    const configured = opts.primeOnly
       ? this.config.primeOffersCollectionId
       : this.config.offersCollectionId;
+    // Un id redescubierto en esta sesión manda sobre la semilla del código.
+    const collectionId = opts.primeOnly
+      ? configured
+      : (this.offersCollectionCache.get(OFFERS_COLLECTION_KEY) ?? configured);
 
     if (!collectionId) {
       throw new Error(
@@ -507,19 +564,18 @@ export class CencosudAdapter implements StoreAdapter {
       );
     }
 
-    let groupId: string | undefined;
-    if (opts.category) {
-      groupId = await this.resolveCategoryGroupId(collectionId, opts.category);
+    let json: ConstructorSearchResponse;
+    try {
+      json = await this.browseOffers(collectionId, opts);
+    } catch (err) {
+      // La colección expiró (404). Redescubrir la vigente y reintentar una vez:
+      // es el modo normal de falla, no una excepción rara (issues #15, #18).
+      if (!this.canRediscoverOffers(err, opts)) throw err;
+      const fresh = await this.discoverOffersCollectionId();
+      if (!fresh || fresh === collectionId) throw err;
+      this.offersCollectionCache.set(OFFERS_COLLECTION_KEY, fresh);
+      json = await this.browseOffers(fresh, opts);
     }
-
-    const json = await this.http.getJson<ConstructorSearchResponse>(
-      this.buildBrowseUrl(collectionId, {
-        limit: Math.min(Math.max(opts.limit ?? 20, 1), 50),
-        page: Math.max(opts.page ?? 1, 1),
-        branchId: opts.branchId,
-        groupId,
-      })
-    );
 
     const results = json.response?.results ?? [];
     return results
@@ -539,6 +595,86 @@ export class CencosudAdapter implements StoreAdapter {
             }
           : p
       );
+  }
+
+  /** Un browse de la colección con los filtros pedidos por get_offers. */
+  private async browseOffers(
+    collectionId: string,
+    opts: OfferOpts
+  ): Promise<ConstructorSearchResponse> {
+    let groupId: string | undefined;
+    if (opts.category) {
+      groupId = await this.resolveCategoryGroupId(collectionId, opts.category);
+    }
+    return this.http.getJson<ConstructorSearchResponse>(
+      this.buildBrowseUrl(collectionId, {
+        limit: Math.min(Math.max(opts.limit ?? 20, 1), 50),
+        page: Math.max(opts.page ?? 1, 1),
+        branchId: opts.branchId,
+        groupId,
+      })
+    );
+  }
+
+  /**
+   * Solo se redescubre ante un 404 (colección inexistente = expirada) y para
+   * el listado general. Un 500 o un timeout no significan rotación, y con
+   * primeOnly no hay landing que raspar.
+   */
+  private canRediscoverOffers(err: unknown, opts: OfferOpts): boolean {
+    return (
+      !opts.primeOnly &&
+      Boolean(this.config.offersLandingPath) &&
+      err instanceof HttpStatusError &&
+      err.status === 404
+    );
+  }
+
+  /**
+   * Descubre el `collection_id` de ofertas vigente leyendo el SSR del landing
+   * y sondeando los candidatos contra Constructor. Devuelve undefined si no
+   * logra identificar ninguna (el llamador conserva el error original).
+   */
+  private async discoverOffersCollectionId(): Promise<string | undefined> {
+    const landing = this.config.offersLandingPath;
+    if (!landing) return undefined;
+
+    let html: string;
+    try {
+      html = await this.http.getText(`${this.config.siteBaseUrl}${landing}`);
+    } catch {
+      return undefined;
+    }
+
+    // El sondeo cuesta una request por candidato: se limita a los más
+    // frecuentes en el SSR, que es donde cae la colección de ofertas.
+    const candidates = extractCollectionIdCandidates(html).slice(
+      0,
+      MAX_OFFERS_COLLECTION_PROBES
+    );
+
+    const probes: CollectionProbe[] = [];
+    for (const id of candidates) {
+      try {
+        const json = await this.http.getJson<ConstructorSearchResponse>(
+          this.buildBrowseUrl(id, { limit: 1, page: 1 })
+        );
+        const collection = json.response?.collection;
+        if (!collection?.display_name) continue;
+        probes.push({
+          id: collection.id ?? id,
+          displayName: collection.display_name,
+          total: json.response?.total_num_results ?? 0,
+          active: collection.data?.active !== "false",
+          expiresAt: parseCollectionDateTo(collection.data?.dateTo),
+        });
+      } catch {
+        // Un candidato que no resuelve (404) simplemente no es la colección.
+        continue;
+      }
+    }
+
+    return pickBestOffersCollection(probes)?.id;
   }
 
   private buildBrowseUrl(

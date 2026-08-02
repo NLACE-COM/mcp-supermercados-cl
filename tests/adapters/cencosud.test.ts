@@ -220,7 +220,7 @@ describe("CencosudAdapter · ofertas (browse de colección)", () => {
     const products = await a.getOffers({ limit: 3 });
 
     const url = new URL(seen[0]);
-    expect(url.pathname).toBe("/browse/collection_id/30509");
+    expect(url.pathname).toBe("/browse/collection_id/30930");
     expect(url.searchParams.get("key")).toBe("key_JopvNXKS61kwGkBe");
 
     expect(products.length).toBeGreaterThan(0);
