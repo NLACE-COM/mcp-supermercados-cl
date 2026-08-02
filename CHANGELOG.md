@@ -4,6 +4,55 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.7] - 2026-08-01
+
+Dos roturas de Jumbo detectadas por el smoke live, ambas por cambios del sitio
+y no por bugs propios. La primera (issue #18) es la tercera repetición del
+mismo 404 en `get_offers`, así que esta vez se ataca la causa en vez del
+síntoma. La segunda no tenía issue y era la más grave: `get_product` devolvía
+`null` para todo, y con él caía el **precio Prime**.
+
+Verificado en vivo: smoke live **7/7**, con `getOffers` y `getProduct` en verde.
+
+### Fixed
+
+- **`get_offers` de Jumbo daba HTTP 404 otra vez** (cierra #18). La causa real
+  no es que Jumbo "rote" un id: **no existe una colección de ofertas estable**.
+  Son colecciones de **campaña** con `data.dateTo`, expiran solas y hay varias
+  activas en paralelo (al 2026-08-01: ciclo 2 con 8.714 productos, ciclo 1 con
+  5.632, ciclo 5 con 5.426, aniversario con 4.113). Hardcodear el id garantizaba
+  un issue nuevo cada una o dos semanas — ya habían sido dos en tres (`30399` →
+  `30509` → 404). Ahora el adaptador **redescubre el id vigente en runtime**
+  (`src/adapters/cencosudOffersCollection.ts`): ante un 404 lee el SSR del
+  landing, extrae los candidatos, los sondea contra Constructor y elige la
+  colección activa, no vencida, cuyo `display_name` matchee `todaslasofertas` y
+  tenga más productos. Queda cacheado (TTL 15 min) y `offersCollectionId` pasa a
+  ser solo una semilla. El camino feliz no paga nada: solo se sondea cuando la
+  colección murió, y un 500 o un timeout no disparan redescubrimiento.
+- **`get_product` de Jumbo devolvía `null` para todo**, y con él caía
+  `get_member_price` — el precio Prime, que es el eje del proyecto. Jumbo migró
+  la PDP de Pages Router a **App Router**: el HTML dejó de traer el estado
+  deshidratado de React Query y el producto viaja ahora en el **stream RSC**
+  (`self.__next_f.push`). Cada trozo es un string JSON escapado y un objeto
+  puede quedar partido entre dos, así que hay que desescapar por separado y
+  concatenar (`src/adapters/rscPayload.ts`). La forma del producto no cambió, de
+  modo que `mapPdpData` queda intacto: solo cambia de dónde se extrae.
+  `parsePdpHtml` intenta primero el formato viejo y cae al RSC, así que soporta
+  ambos. Ojo: la PDP embebe ~20 objetos `product` (los carruseles "Te podrían
+  interesar"), por eso se elige por `slug` igual al de la URL y no el primero.
+
+### Changed
+
+- La guía de recuperación manual de la colección de ofertas
+  (`docs/captura-cencosud-2026-07-06.md` §3b) **había quedado obsoleta**: el
+  campo `originalUrl":"/busca?fq=H%3A<id>"` que mandaba a leer ya no existe en
+  `/jumbo-ofertas`, que hoy es un landing de carruseles de campaña. Documentadas
+  las huellas que sí siguen sirviendo y el `curl` para inspeccionar una
+  colección.
+- Fixtures reales nuevas: el landing de ofertas y la PDP en App Router (esta
+  última recortada a 2 de sus 233 trozos, 7,8 KB).
+- 180 tests de contrato (20 nuevos).
+
 ## [1.4.6] - 2026-07-20
 
 Arregla `get_offers` de Jumbo, que fallaba con **HTTP 404** (lo detectó el
@@ -355,6 +404,7 @@ Versión enfocada en **experiencia del usuario**.
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.4.7]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.7
 [1.4.3]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.3
 [1.4.2]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.2
 [1.4.1]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.1
