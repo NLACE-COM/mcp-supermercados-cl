@@ -2,6 +2,8 @@
 
 # 🛒 mcp-supermercados-cl
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2FNLACE-COM%2Fmcp-supermercados-cl.svg)](https://mcptoplist.com/server/glama%2FNLACE-COM%2Fmcp-supermercados-cl)
+
 > Servidor **MCP** para buscar productos, comparar precios y armar la mejor lista
 > de compra en supermercados chilenos con Claude, ChatGPT u otro cliente MCP.
 
