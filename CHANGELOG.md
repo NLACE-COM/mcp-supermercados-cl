@@ -4,6 +4,28 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [1.4.8] - 2026-10-16
+
+Mantenimiento: el CI estaba en rojo por fixtures vencidas y una falla del smoke
+live no se podía diagnosticar. Verificado en vivo: smoke live **7/7** desde
+GitHub Actions.
+
+### Fixed
+
+- **Dos tests de `offersCollection.test.ts` fallaban desde fines de agosto**
+  (reportado en #24). Las colecciones de la fixture vencen en agosto de 2026 y
+  `pickBestOffersCollection` usa `Date.now()`, así que con el reloj real ya no
+  quedaba ninguna vigente. Los tests del adaptador ahora fijan la fecha de
+  captura (2026-08-01).
+
+### Changed
+
+- **El error de `get_offers` dice por qué no pudo redescubrir la colección**
+  (cierra #23). Antes, si el redescubrimiento fallaba, solo quedaba el 404
+  original. Ahora el mensaje suma el paso que falló: lectura del landing, falta
+  de candidatos en el SSR o candidatos sondeados sin un listado de ofertas
+  vigente.
+
 ## [1.4.7] - 2026-08-01
 
 Dos roturas de Jumbo detectadas por el smoke live, ambas por cambios del sitio
@@ -404,6 +426,7 @@ Versión enfocada en **experiencia del usuario**.
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.4.8]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.8
 [1.4.7]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.7
 [1.4.3]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.3
 [1.4.2]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.2
