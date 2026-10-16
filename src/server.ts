@@ -44,7 +44,7 @@ Cómo guiar al usuario:
 - Precios SIEMPRE en CLP enteros. Usa "price" (vigente), "listPrice" (normal) y
   "memberPrice" (socio) sin mezclarlos. Prefiere comparar por precio por unidad.
 - Ante un error, lee su campo "action": dice el siguiente paso concreto para el
-  usuario (ej. re-loguearse, reintentar, usar IP residencial). Comunícaselo.
+  usuario (ej. re-loguearse, reintentar, leer la búsqueda desde el navegador). Comunícaselo.
 
 Sugerencias de partida (prompts): armar_lista, comparar_carro, ofertas_frecuentes,
 conectar_sesion.

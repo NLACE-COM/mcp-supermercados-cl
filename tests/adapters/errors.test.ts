@@ -25,10 +25,16 @@ describe("toActionableError", () => {
     expect(e.action).toMatch(/reintenta/i);
   });
 
-  it("cadena residencial agrega la pista de IP", () => {
+  it("tottus/lider agregan la pista del navegador real (huella, no IP)", () => {
     const e = toActionableError(new Error("fetch failed"), "lider");
     expect(e.kind).toBe("network");
-    expect(e.action).toMatch(/residencial/i);
+    expect(e.action).toMatch(/navegador real/i);
+    expect(e.action).toMatch(/browserHtml/);
+  });
+
+  it("unimarc ya no lleva la pista de bloqueo (responde al fetch directo)", () => {
+    const e = toActionableError(new Error("fetch failed"), "unimarc");
+    expect(e.action).not.toMatch(/navegador real/i);
   });
 
   it("error desconocido cae a unknown con mensaje original", () => {

@@ -22,14 +22,21 @@ export interface ActionableError {
   action: string;
 }
 
-/** Cadenas que exigen IP residencial (bloquean datacenter). */
-const RESIDENTIAL_ONLY: StoreId[] = ["unimarc", "tottus", "lider"];
+/**
+ * Cadenas que bloquean cualquier cliente HTTP plano por huella (TLS/JA3 +
+ * antibot), incluso desde IP residencial: solo se leen con un navegador real
+ * (issue #2; verificado de nuevo 2026-10-16). Unimarc ya no está: responde
+ * incluso desde GitHub Actions.
+ */
+const BROWSER_ONLY: StoreId[] = ["tottus", "lider"];
 
 export function toActionableError(err: unknown, store?: StoreId): ActionableError {
   const raw = err instanceof Error ? err.message : String(err);
-  const residentialHint =
-    store && RESIDENTIAL_ONLY.includes(store)
-      ? ` ${store} bloquea el tráfico de datacenter: corre el servidor en tu equipo (IP residencial).`
+  const browserHint =
+    store && BROWSER_ONLY.includes(store)
+      ? ` ${store} bloquea el fetch del servidor por huella del cliente (no por IP): ` +
+        "lee la búsqueda desde un navegador real (browserHtml en search_products, o el " +
+        "puente Playwright con SUPERMERCADOS_PLAYWRIGHT_PROFILE)."
       : "";
 
   if (err instanceof HttpStatusError) {
@@ -40,7 +47,7 @@ export function toActionableError(err: unknown, store?: StoreId): ActionableErro
         action:
           "Tu sesión pudo expirar o falta. Abre el sitio en el navegador, verifica " +
           "que estás logueado, y vuelve a ejecutar el browserSnippet para reenviar la sesión." +
-          residentialHint,
+          browserHint,
       };
     }
     if (err.status === 404) {
@@ -75,7 +82,7 @@ export function toActionableError(err: unknown, store?: StoreId): ActionableErro
       message: "La petición tardó demasiado y se canceló.",
       action:
         "Reintenta; si persiste, la cadena puede estar lenta o bloqueando." +
-        residentialHint,
+        browserHint,
     };
   }
   if (/fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|network/i.test(raw)) {
@@ -84,7 +91,7 @@ export function toActionableError(err: unknown, store?: StoreId): ActionableErro
       message: "No se pudo conectar con el sitio.",
       action:
         "Revisa tu conexión y reintenta. Usa adapter_status para ver qué cadenas responden." +
-        residentialHint,
+        browserHint,
     };
   }
   if (/bloque|blocked|perimeterx|captcha|robot or human|forbidden/i.test(raw)) {
@@ -92,11 +99,11 @@ export function toActionableError(err: unknown, store?: StoreId): ActionableErro
       kind: "blocked",
       message: raw || "La cadena bloqueó la petición (antibot).",
       action:
-        "Corre el servidor desde tu equipo (IP residencial), no desde la nube. " +
-        "Si ya estás en IP residencial, el bloqueo suele ser intermitente: reintenta en unos " +
-        "minutos, o abre el sitio en tu navegador (resolver el desafío desbloquea la IP) y " +
+        "Si es Tottus o Lider, el bloqueo es por huella del cliente y no se arregla " +
+        "reintentando: lee la búsqueda desde un navegador real. En otras cadenas suele ser " +
+        "intermitente: reintenta en unos minutos, o abre el sitio en tu navegador y " +
         'reintenta. Informar al usuario que la cadena bloqueó, no que "no hay resultados".' +
-        residentialHint,
+        browserHint,
     };
   }
 

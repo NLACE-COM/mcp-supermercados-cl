@@ -4,6 +4,25 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Fixed
+
+- **El README y los mensajes de error describían mal el bloqueo antibot**
+  (señalado por el análisis de DesarrolloMCP, #24). Decían que Unimarc, Tottus y
+  Lider bloquean el tráfico de datacenter y que basta una IP residencial. Lo
+  verificado: Unimarc responde incluso desde GitHub Actions, y Tottus y Lider
+  bloquean el fetch directo por huella del cliente también desde IP residencial.
+  El `action` de los errores ahora indica leer la búsqueda desde un navegador
+  real (`browserHtml` o el puente Playwright) en vez de cambiar de red.
+
+### Changed
+
+- **README: qué significa `executed` en `add_to_cart`.** `executed: true`
+  indica que se normalizó el JSON que entregó el navegador, no que el servidor
+  haya verificado la operación con la tienda. Se agrega la versión probada del
+  protocolo MCP (`2025-11-25`, SDK 1.29).
+
 ## [1.4.8] - 2026-10-16
 
 Mantenimiento: el CI estaba en rojo por fixtures vencidas y una falla del smoke

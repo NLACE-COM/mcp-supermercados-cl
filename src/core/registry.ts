@@ -14,8 +14,8 @@ import type { StoreId } from "./types.js";
  * - Jumbo: ciclo completo (búsqueda, sesión, lista, carro).
  * - Santa Isabel: búsqueda (mismo adaptador Cencosud).
  * - Unimarc (VTEX/BFF), Tottus (Falabella SSR), Lider (Walmart Glass SSR):
- *   búsqueda. Requieren IP residencial (la máquina del usuario); desde
- *   datacenter algunas cadenas bloquean.
+ *   búsqueda. Tottus y Lider bloquean el fetch directo por huella del
+ *   cliente (incluso desde IP residencial) y se leen vía navegador real.
  */
 const adapters = new Map<StoreId, StoreAdapter>();
 

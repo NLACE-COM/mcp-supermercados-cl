@@ -6,9 +6,10 @@ import { HttpStatusError } from "../../src/http/client.js";
 import { ProductSchema } from "../../src/core/types.js";
 
 /**
- * Smoke live de Unimarc, Tottus y Lider. Requieren IP RESIDENCIAL (la
- * máquina del usuario). Desde datacenter estas cadenas bloquean (403/antibots),
- * por eso son opt-in con LIVE=1 y no corren en CI.
+ * Smoke live de Unimarc, Tottus y Lider, opt-in con LIVE=1. Unimarc responde
+ * incluso desde GitHub Actions. Tottus y Lider bloquean el fetch directo por
+ * huella del cliente, también desde IP residencial (verificado 2026-10-16), así
+ * que con fetch plano su bloqueo es lo esperable en cualquier red.
  *
  * Bloqueo antibot vs. cambio de formato: desde la nube (GitHub Actions) el
  * bloqueo es ESPERABLE y no significa que el adaptador esté roto, así que por
@@ -16,8 +17,8 @@ import { ProductSchema } from "../../src/core/types.js";
  * formato real se manifiesta distinto —el fetch pasa pero el esquema o la
  * aserción de resultados falla— y ese sí rompe el smoke.
  *
- * En un runner con IP residencial, corre con SMOKE_STRICT=1 para que el
- * bloqueo vuelva a ser fallo y así tener cobertura real de las tres cadenas.
+ * SMOKE_STRICT=1 vuelve el bloqueo un fallo: hoy fallan Tottus y Lider en
+ * cualquier red, así que sirve para detectar si alguna dejó de bloquear.
  */
 const live = process.env.LIVE === "1" ? describe : describe.skip;
 const strict = process.env.SMOKE_STRICT === "1";

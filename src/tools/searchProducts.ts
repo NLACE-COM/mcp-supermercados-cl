@@ -61,7 +61,8 @@ export function registerSearchProducts(server: McpServer): void {
           .default("jumbo")
           .describe(
             "Cadena donde buscar: jumbo, santaisabel, unimarc, tottus o lider. " +
-              "unimarc/tottus/lider requieren IP residencial (la máquina del usuario)."
+              "tottus/lider bloquean el fetch directo por huella del cliente: si bloquean, la respuesta " +
+              "trae openUrl/browserSnippet/retryWith para leerlas desde un navegador real."
           ),
         query: z
           .string()

@@ -22,7 +22,8 @@ export function registerCompareStores(server: McpServer): void {
         "IMPORTANTE: cada cadena resuelve el ítem por su cuenta, así que el 'más barato' puede ser un producto o " +
         "formato distinto; usa el campo `comparability` (same/similar/mixed por ítem) y compara por precio por " +
         "unidad, no solo por total. Capacidad secundaria: para el día a día conviene build_list con tu sesión. " +
-        "Nota: unimarc/tottus/lider requieren IP residencial; si una cadena falla, se reporta y las demás siguen.",
+        "Nota: tottus/lider solo se incluyen si está configurado el puente de navegador (bloquean el fetch directo); " +
+        "si una cadena falla, se reporta y las demás siguen.",
       inputSchema: {
         items: z
           .array(z.string().min(1))

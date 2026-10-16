@@ -41,9 +41,11 @@ intencional, y es la razón por la que funciona:
 
 - Usa transporte **stdio** (local), no HTTP. Corre en tu máquina, junto a tu
   cliente MCP (Claude Desktop, Claude Code, Cursor, ChatGPT Desktop).
-- Unimarc, Tottus y Lider **bloquean el tráfico de datacenter** (antibots). Un
-  deploy en la nube **no funcionaría** para esas cadenas: necesitan tu IP
-  residencial.
+- Tottus y Lider **bloquean cualquier cliente HTTP plano** por su huella
+  (TLS/JA3 + antibot), incluso desde una IP residencial. Lo que sí carga sus
+  datos es un **navegador real**, y ese navegador está en tu máquina (ver
+  [el puente contra el antibot](#líder-y-tottus-puente-automático-contra-el-antibot)).
+  Un deploy en la nube no tendría ese navegador.
 - El precio socio, tus frecuentes y el carro viven en **tu navegador logueado**.
   Las credenciales no deben tocar un servidor central — eso además evita el
   mayor riesgo legal (un servicio que scrapee cuentas ajenas).
@@ -56,7 +58,8 @@ servers.
 
 ## 📦 Instalación
 
-Requiere **Node.js ≥ 20**. Publicado en npm:
+Requiere **Node.js ≥ 20**. Probado con el SDK oficial `@modelcontextprotocol/sdk`
+1.29 (protocolo MCP `2025-11-25`). Publicado en npm:
 [`mcp-supermercados-cl`](https://www.npmjs.com/package/mcp-supermercados-cl).
 
 **Opción 1 — vía `npx` (recomendada).** No instalas nada; tu cliente MCP lo
@@ -120,8 +123,12 @@ con tu sesión en santaisabel.cl.
 ² Lider no expone precio socio dual como el Prime de Jumbo; sus descuentos son
 rebajas directas ("Precio Lider") + bundles.
 
-> ⚠️ Unimarc, Tottus y Lider requieren **IP residencial** (tu máquina); desde
-> datacenter bloquean. Como el MCP corre local, en tu equipo funcionan.
+> ⚠️ Tottus y Lider bloquean el fetch del servidor por **huella del cliente**,
+> no por IP: desde tu equipo también responden 403 / `307 → /blocked`. Se leen a
+> través de un navegador real, manual o automatizado (ver
+> [el puente contra el antibot](#líder-y-tottus-puente-automático-contra-el-antibot)).
+> Jumbo, Santa Isabel y Unimarc responden al fetch directo (verificado 2026-10-16,
+> también desde GitHub Actions).
 
 Todos los resultados vienen **enriquecidos**: nombre, marca, descripción, foto,
 precio vigente, precio normal, precio socio, **precio por unidad normalizado**
@@ -139,7 +146,7 @@ precio vigente, precio normal, precio socio, **precio por unidad normalizado**
 | `suggest_swaps`            | Reemplazos convenientes por precio por unidad. Con `preferNatural`: alternativas de precio similar con menos ingredientes.                                                                                                                               |
 | `get_frequent_purchases`   | Tus productos habituales, con precio Prime (requiere sesión).                                                                                                                                                                                            |
 | `get_saved_lists`          | Tus listas guardadas (requiere sesión).                                                                                                                                                                                                                  |
-| `add_to_cart` / `get_cart` | Deja la lista en el carro de Jumbo; total, ahorro y ahorro Prime.                                                                                                                                                                                        |
+| `add_to_cart` / `get_cart` | Prepara el cambio en el carro de Jumbo (`browserSnippet`) y normaliza el carro que devuelve tu navegador: total, ahorro y ahorro Prime. Ver [qué significa `executed`](#flujo-de-sesión-manual-o-automatizado).                                          |
 
 **Lectura de catálogo:**
 
@@ -167,7 +174,7 @@ servidor además trae `instructions` para que el modelo te guíe en el primer us
 (qué cadena, cuándo pedir sesión, cómo leer los errores).
 
 Los errores vienen **accionables**: cada uno trae un campo `action` con el
-siguiente paso concreto (re-loguearte, reintentar, usar IP residencial…) en vez
+siguiente paso concreto (re-loguearte, reintentar, leer la búsqueda desde tu navegador…) en vez
 de un mensaje técnico.
 
 ---
@@ -244,7 +251,7 @@ rotos dos días hasta que lo reportó un usuario.
 
 Los tests de contrato usan respuestas reales grabadas en
 [`tests/fixtures/`](tests/fixtures). Los live requieren red y, para
-Unimarc/Tottus/Lider, IP residencial. Regraba una fixture cuando una cadena
+Tottus/Lider, un navegador real (ver más abajo). Regraba una fixture cuando una cadena
 cambie su formato, anotando la fecha.
 
 Cada push y PR corre `lint + typecheck + build + test` en CI (GitHub Actions,
@@ -257,6 +264,16 @@ Las tools que requieren sesión (`get_cart`, `get_frequent_purchases`,
 `get_saved_lists`, `add_to_cart`) devuelven un `browserSnippet`: un fetch de
 **una sola llamada** para ejecutar en una pestaña ya logueada del sitio. Pasas
 el JSON de vuelta y la tool lo normaliza — el servidor nunca ve tu token.
+
+**Qué significa `executed`.** El servidor no ejecuta nada en la tienda. Sin el
+resultado del navegador, `add_to_cart` responde `executed: false` con el
+request y el snippet: solo **prepara** el cambio. Con `rawCartResult`, responde
+`executed: true` y el carro normalizado: significa que **normalizó el JSON que
+entregó tu navegador**, no que el servidor haya verificado la operación con la
+tienda. La fuente de verdad es el carro que ves en el sitio. Agregar al carro
+es reversible y **no es una compra**: el pago siempre ocurre en el sitio de la
+tienda. Recomendado para clientes MCP: mostrar al usuario qué va a cambiar (SKU,
+cantidad, sucursal) y que sea él quien ejecute el snippet.
 
 Para automatizarlo (sin copiar/pegar), existe un puente opcional con Playwright
 (`src/adapters/playwrightBridge.ts`) que reusa el perfil de Chrome donde ya
@@ -271,7 +288,8 @@ npx playwright install chromium
 #### Líder y Tottus: puente automático contra el antibot
 
 Líder y Tottus bloquean el fetch del servidor por **fingerprint del cliente**
-(TLS/JA3 + desafío JS de PerimeterX; en Líder además F5 BIG-IP con `307 → /blocked`).
+(TLS/JA3 + desafío JS de PerimeterX; en Líder además F5 BIG-IP con `307 → /blocked`;
+Tottus responde 403).
 No es tu IP: la misma IP en un navegador real carga los datos ([issue #2](https://github.com/NLACE-COM/mcp-supermercados-cl/issues/2)).
 Hay dos formas de sortearlo en `search_products`, `compare_stores` y
 `build_cheapest_basket`:
