@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CencosudAdapter, JUMBO_CONFIG } from "../../src/adapters/cencosud.js";
 import {
   extractCollectionIdCandidates,
@@ -206,6 +206,17 @@ function makeRotatedHttp(expiredId: string) {
 }
 
 describe("CencosudAdapter · ofertas se auto-reparan cuando la colección rota", () => {
+  // Las colecciones de REAL_COLLECTIONS vencen en agosto de 2026: con el reloj
+  // real, desde esa fecha ninguna queda vigente y el redescubrimiento no tiene
+  // qué elegir (issue #24). Se fija la fecha de captura de las fixtures.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-01T12:00:00.000Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("ante 404 redescubre la colección vigente y devuelve productos (issue #18)", async () => {
     // JUMBO_CONFIG apunta a 30930; simulamos que ESA expiró para probar el
     // camino de rotación sin depender del id que esté configurado hoy.
@@ -237,6 +248,22 @@ describe("CencosudAdapter · ofertas se auto-reparan cuando la colección rota",
 
     expect(afterFirst).toBe(1);
     expect(calls.filter((u) => u.endsWith("/jumbo-ofertas"))).toHaveLength(1);
+  });
+
+  it("si no logra redescubrir, el error dice en qué paso falló (issue #23)", async () => {
+    const http: HttpFetcher = {
+      async getJson<T>(url: string): Promise<T> {
+        throw new HttpStatusError(url, 404);
+      },
+      async getText(): Promise<string> {
+        return "<html>landing sin colecciones</html>";
+      },
+    };
+    const adapter = new CencosudAdapter(JUMBO_CONFIG, http, "test-uuid");
+
+    await expect(adapter.getOffers({ limit: 3 })).rejects.toThrow(
+      /404.*no trae ids de colección/
+    );
   });
 
   it("un error que no es 404 se propaga sin tocar el landing", async () => {
