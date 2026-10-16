@@ -593,8 +593,17 @@ export class CencosudAdapter implements StoreAdapter {
       // La colección expiró (404). Redescubrir la vigente y reintentar una vez:
       // es el modo normal de falla, no una excepción rara (issues #15, #18).
       if (!this.canRediscoverOffers(err, opts)) throw err;
-      const fresh = await this.discoverOffersCollectionId();
-      if (!fresh || fresh === collectionId) throw err;
+      const { id: fresh, reason } = await this.discoverOffersCollectionId();
+      if (!fresh || fresh === collectionId) {
+        // Se conserva el 404 original pero con el motivo del fallo: sin él, una
+        // alerta del smoke live no dice si falló el landing, los candidatos o
+        // el filtro de nombres (issue #23).
+        throw new Error(
+          `${(err as Error).message} — no se pudo redescubrir la colección de ` +
+            `ofertas: ${reason ?? `el landing volvió a apuntar a ${collectionId}`}`,
+          { cause: err }
+        );
+      }
       this.offersCollectionCache.set(OFFERS_COLLECTION_KEY, fresh);
       json = await this.browseOffers(fresh, opts);
     }
@@ -654,18 +663,21 @@ export class CencosudAdapter implements StoreAdapter {
 
   /**
    * Descubre el `collection_id` de ofertas vigente leyendo el SSR del landing
-   * y sondeando los candidatos contra Constructor. Devuelve undefined si no
-   * logra identificar ninguna (el llamador conserva el error original).
+   * y sondeando los candidatos contra Constructor. Sin id, `reason` explica
+   * en qué paso falló (el llamador lo suma al error original).
    */
-  private async discoverOffersCollectionId(): Promise<string | undefined> {
+  private async discoverOffersCollectionId(): Promise<{
+    id?: string;
+    reason?: string;
+  }> {
     const landing = this.config.offersLandingPath;
-    if (!landing) return undefined;
+    if (!landing) return { reason: "el banner no tiene landing de ofertas" };
 
     let html: string;
     try {
       html = await this.http.getText(`${this.config.siteBaseUrl}${landing}`);
-    } catch {
-      return undefined;
+    } catch (err) {
+      return { reason: `falló la lectura de ${landing} (${(err as Error).message})` };
     }
 
     // El sondeo cuesta una request por candidato: se limita a los más
@@ -696,7 +708,17 @@ export class CencosudAdapter implements StoreAdapter {
       }
     }
 
-    return pickBestOffersCollection(probes)?.id;
+    const best = pickBestOffersCollection(probes);
+    if (best) return { id: best.id };
+    if (candidates.length === 0) {
+      return { reason: `${landing} no trae ids de colección en el SSR` };
+    }
+    const seen = probes.map((p) => `${p.id} "${p.displayName}"`).join(", ");
+    return {
+      reason:
+        `ninguno de los ${candidates.length} candidatos es un listado de ofertas ` +
+        `vigente (sondeados: ${seen || "ninguno respondió"})`,
+    };
   }
 
   private buildBrowseUrl(
