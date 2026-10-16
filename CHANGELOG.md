@@ -4,7 +4,10 @@ Todas las versiones notables de `mcp-supermercados-cl`. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [SemVer](https://semver.org/lang/es/).
 
-## [Unreleased]
+## [1.4.9] - 2026-10-16
+
+Correcciones de documentación y de los mensajes de error, a partir del análisis
+de DesarrolloMCP (#24). Sin cambios en el comportamiento de las tools.
 
 ### Fixed
 
@@ -445,6 +448,7 @@ Versión enfocada en **experiencia del usuario**.
   cadenas. Precios normal/socio separados, precio por unidad normalizado,
   bundles multi-compra. Sesión sin credenciales en el servidor. Licencia MIT.
 
+[1.4.9]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.9
 [1.4.8]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.8
 [1.4.7]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.7
 [1.4.3]: https://github.com/NLACE-COM/mcp-supermercados-cl/releases/tag/v1.4.3
